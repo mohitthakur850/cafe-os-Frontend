@@ -5,7 +5,7 @@ export default function DisplayScreen() {
 
   useEffect(() => {
     fetch('https://cafe-os-backend.onrender.com/orders').then(res => res.json()).then(data => setOrders(data.filter(o => o.status !== 'Completed')));
-    const ws = new WebSocket('ws://cafe-os-backend.onrender.com');
+    const ws = new WebSocket('wss://cafe-os-backend.onrender.com');
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.type === 'NEW_ORDER') setOrders(prev => [...prev, msg.data]);
