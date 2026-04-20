@@ -1,0 +1,177 @@
+/* =========================================
+   DisplayScreen.css
+   ========================================= */
+
+* { 
+  box-sizing: border-box; 
+}
+
+/* ================= FULL SCREEN CONTAINER ================= */
+.display-container {
+  width: 100vw; 
+  height: 100vh; 
+  background-color: #f8f9fa;
+  color: #2d3436;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+/* Dashboard ki padding se bachne ke liye naya naam */
+.tv-main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding: 0 !important; 
+}
+
+/* ================= PANELS ================= */
+.panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-preparing {
+  border-right: 1px solid #dfe6e9;
+  background: white;
+}
+
+.panel-collect {
+  background: #f9fdfa;
+}
+
+/* ================= HEADINGS ================= */
+.main-heading {
+  margin: 0;
+  height: 75px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  letter-spacing: 2px;
+  flex-shrink: 0;
+}
+
+.heading-prep { 
+  color: #e67e22; 
+  border-bottom: 1px solid #f1f2f6; 
+  background: #fff9f5; 
+}
+
+.heading-coll { 
+  color: #27ae60; 
+  border-bottom: 1px solid #e8f8f5; 
+  background: #eafaf1; 
+}
+
+/* ================= MASTER GRID LAYOUT ================= */
+.grid-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  gap: 20px;
+  align-items: center;
+}
+
+.list-header {
+  /* THE MAGIC ALIGNMENT FIX: Exact 40px taaki card text ke upar aaye */
+  padding: 12px 40px; 
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.header-prep { 
+  border-bottom: 2px solid #f1f2f6; 
+  color: #b2bec3; 
+}
+
+.header-coll { 
+  border-bottom: 2px solid #e8f8f5; 
+  color: #7bdcb5; 
+}
+
+/* ================= ORDER LIST & CARDS ================= */
+.order-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Compact Gap */
+}
+
+/* Custom Scrollbar for TV */
+.order-list::-webkit-scrollbar { width: 6px; }
+.order-list::-webkit-scrollbar-track { background: transparent; }
+.order-list::-webkit-scrollbar-thumb { background: #dfe6e9; border-radius: 10px; }
+
+.order-card {
+  border-radius: 8px;
+}
+
+.card-prep {
+  background: white;
+  border-left: 6px solid #ff9f43;
+  border-top: 1px solid #f1f2f6;
+  border-right: 1px solid #f1f2f6;
+  border-bottom: 1px solid #f1f2f6;
+  padding: 12px 20px 12px 14px; /* Compact Padding */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+}
+
+.card-coll {
+  background: #2ecc71;
+  padding: 12px 20px; /* Compact Padding */
+  box-shadow: 0 6px 15px rgba(46, 204, 113, 0.25);
+}
+
+/* ================= TEXT STYLES ================= */
+.col-id { font-size: 1.3rem; font-weight: 900; } /* Compact Font */
+.id-prep { color: #e67e22; }
+.id-coll { color: #145c32; }
+
+.col-name { 
+  font-size: 1.4rem; /* Compact Font */
+  font-weight: bold; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+}
+.name-prep { color: #2d3436; }
+.name-coll { color: white; }
+
+.col-time { font-size: 1.05rem; text-align: right; } /* Compact Font */
+.time-prep { color: #636e72; font-weight: 600; }
+.time-coll { color: #e8f8f5; font-weight: 700; }
+
+/* ================= SCROLLING FOOTER ================= */
+.footer-scroller {
+  height: 55px;
+  background: #ff793f;
+  display: flex;
+  align-items: center;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  z-index: 10;
+  flex-shrink: 0;
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+}
+
+.marquee {
+  animation: marqueeText 20s linear infinite;
+  display: inline-block;
+  width: 100%;
+}
+
+@keyframes marqueeText {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}

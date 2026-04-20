@@ -1,0 +1,46 @@
+.admin-container { min-height: 100vh; font-family: sans-serif; padding: 20px; background-color: #e8f0fe; box-sizing: border-box; }
+.admin-wrapper { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px; }
+.admin-title { color: #2d3436; margin: 0; font-size: 1.4rem; }
+.admin-stat-box { text-align: right; }
+.admin-stat-label { color: #636e72; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+.admin-stat-value { font-size: 2rem; color: #0984e3; font-weight: 800; line-height: 1; margin-top: 4px; }
+.admin-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; }
+.admin-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+.admin-card-title { margin: 0; font-size: 1.2rem; color: #2d3436; }
+.admin-filter-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.admin-input { padding: 8px 12px; border-radius: 8px; border: 1px solid #dfe6e9; font-size: 0.9rem; outline: none; }
+.admin-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #dfe6e9; font-size: 0.9rem; outline: none; background: #f8f9fa; cursor: pointer; }
+.admin-table-wrapper { max-height: 300px; overflow-y: auto; }
+.admin-table { width: 100%; border-collapse: collapse; min-width: 500px; }
+.admin-table thead { position: sticky; top: 0; background: white; z-index: 1; }
+.admin-table tr { border-bottom: 1px solid #f1f2f6; }
+.admin-table thead tr { border-bottom: 2px solid #dfe6e9; text-align: left; }
+.admin-table th { padding: 10px; color: #636e72; font-size: 0.9rem; }
+.admin-table td { padding: 10px; }
+.td-id { font-weight: bold; color: #ff793f; font-size: 1rem; }
+.td-time { color: #b2bec3; font-size: 0.9rem; }
+.td-name { font-weight: 600; font-size: 1rem; color: #2d3436; }
+.status-badge { padding: 4px 12px; border-radius: 15px; font-size: 0.8rem; font-weight: bold; }
+.empty-msg { text-align: center; color: #b2bec3; padding: 15px; font-size: 0.9rem; }
+.admin-form { display: flex; flex-direction: column; gap: 15px; }
+.admin-form-row { display: flex; gap: 15px; flex-direction: row; }
+@media (max-width: 600px) { .admin-form-row { flex-direction: column; } }
+.admin-form-input { flex: 1; padding: 12px; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 0.95rem; outline: none; }
+.admin-upload-box { padding: 15px; border: 1px dashed #b2bec3; border-radius: 8px; background: #f8f9fa; text-align: center; }
+.admin-upload-label { display: block; margin-bottom: 8px; color: #636e72; font-weight: bold; font-size: 0.9rem; }
+.admin-upload-input { width: 100%; max-width: 250px; cursor: pointer; font-size: 0.85rem; }
+.admin-img-preview-box { margin-top: 15px; }
+.admin-img-preview { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.admin-form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-submit { flex: 1; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s; min-width: 150px; }
+.btn-cancel { flex: 1; padding: 12px; background: #f1f2f6; color: #636e72; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; min-width: 100px; }
+.menu-list-wrapper { max-height: 350px; overflow-y: auto; }
+.menu-list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #f1f2f6; background: #fafafa; border-radius: 8px; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+.menu-item-info { display: flex; align-items: center; gap: 12px; }
+.menu-item-img { width: 45px; height: 45px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+.menu-item-name { font-weight: bold; font-size: 1rem; color: #2d3436; }
+.menu-item-cat { font-size: 0.85rem; color: #636e72; margin-top: 2px; }
+.menu-item-actions { display: flex; gap: 8px; }
+.btn-modify { background: #e3f2fd; color: #0984e3; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+.btn-delete { background: #ffeef0; color: #d63031; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }

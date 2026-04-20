@@ -1,0 +1,20 @@
+.kitchen-container { padding: 20px; background: #f4f7f6; min-height: 100vh; font-family: sans-serif; box-sizing: border-box; }
+.kitchen-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+.kitchen-title { margin: 0; color: #2d3436; font-size: 1.4rem; }
+.kitchen-active-info { color: #636e72; font-weight: bold; font-size: 0.9rem; }
+.kitchen-active-count { color: #d63031; font-size: 1.2rem; }
+.kitchen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+.kitchen-ticket { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
+.ticket-header-top { color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+.ticket-id { font-size: 1.3rem; font-weight: bold; }
+.ticket-status-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+.ticket-customer-row { padding: 10px 15px; border-bottom: 1px dashed #dfe6e9; display: flex; align-items: center; gap: 8px; }
+.ticket-customer-icon { font-size: 1rem; }
+.ticket-customer-name { font-weight: bold; color: #2d3436; font-size: 1.1rem; }
+.ticket-items-container { padding: 15px; flex: 1; overflow-y: auto; max-height: 150px; }
+.ticket-item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.95rem; color: #2d3436; }
+.ticket-item-qty { background: #f1f2f6; padding: 2px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
+.ticket-error-msg { color: #636e72; font-size: 0.9rem; }
+.ticket-action-container { padding: 15px; background: #fafafa; border-top: 1px solid #f1f2f6; }
+.btn-ticket-action { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.kitchen-empty-msg { grid-column: 1 / -1; text-align: center; padding: 40px; color: #b2bec3; font-size: 1.2rem; }

@@ -1,6 +1,15 @@
 /* --- src/index.css --- */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
+body {
+  font-family: sans-serif; /* Ya aapka koi custom font */
+  overflow-x: hidden; /* Screen ke bahar jane se rokne ke liye */
+}
 :root {
   --bg-color: #fdfaf6; 
   --text-main: #2d3436;
@@ -226,4 +235,14 @@ th { background-color: #f8f9fa; color: var(--text-light); font-weight: 600; }
 @keyframes fadeInDown {
   from { opacity: 0; transform: translate(-50%, -20px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  width: 100%;
+  overflow-x: hidden; /* Yeh mobile par horizontal scroll (left-right hilne) ko rokta hai */
 }
