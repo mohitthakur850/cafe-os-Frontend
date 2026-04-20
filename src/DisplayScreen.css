@@ -105,10 +105,23 @@
   gap: 10px; /* Compact Gap */
 }
 
-/* Custom Scrollbar for TV */
-.order-list::-webkit-scrollbar { width: 6px; }
-.order-list::-webkit-scrollbar-track { background: transparent; }
-.order-list::-webkit-scrollbar-thumb { background: #dfe6e9; border-radius: 10px; }
+/* ================= ORDER LIST & CARDS ================= */
+.order-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px; 
+  /* Auto-scroll ke liye scrollbar chupana (Firefox & IE) */
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
+}
+
+/* Chrome/Safari mein scrollbar chupane ke liye */
+.order-list::-webkit-scrollbar { 
+  display: none; 
+}
 
 .order-card {
   border-radius: 8px;
