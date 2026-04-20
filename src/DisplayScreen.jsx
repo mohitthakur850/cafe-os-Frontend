@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './DisplayScreen.css'; 
 
 const API_URL = 'https://cafe-os-backend.onrender.com';
@@ -6,6 +6,10 @@ const WS_URL = 'wss://cafe-os-backend.onrender.com';
 
 export default function DisplayScreen() {
   const [orders, setOrders] = useState([]);
+  
+  // Naye Refs Auto-Scroll ke liye
+  const prepRef = useRef(null);
+  const collRef = useRef(null);
 
   useEffect(() => {
     fetch(`${API_URL}/orders`).then(res => res.json()).then(setOrders);
@@ -20,8 +24,35 @@ export default function DisplayScreen() {
     return () => socket.close();
   }, []);
 
+  // ================= AUTO SCROLL LOGIC =================
+  useEffect(() => {
+    const autoScroll = (ref) => {
+      if (ref.current) {
+        const { scrollTop, scrollHeight, clientHeight } = ref.current;
+        
+        // Agar list neeche tak pahunch gayi hai, toh wapas upar jao
+        if (scrollTop + clientHeight >= scrollHeight - 5) {
+          ref.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          // Warna har baar 120px (lagbhag ek card) neeche khiskao
+          ref.current.scrollBy({ top: 120, behavior: 'smooth' });
+        }
+      }
+    };
+
+    // Har 3 second (3000ms) mein scroll chalega
+    const scrollTimer = setInterval(() => {
+      autoScroll(prepRef);
+      autoScroll(collRef);
+    }, 3000);
+
+    return () => clearInterval(scrollTimer);
+  }, []);
+  // =====================================================
+
   const preparingOrders = orders.filter(o => o.status === 'Preparing');
-  const completedOrders = orders.filter(o => o.status === 'Completed').slice(-15); 
+  // Limit badha kar 30 kar di hai taaki purane orders bhi scroll hote hue dikhein
+  const completedOrders = orders.filter(o => o.status === 'Completed').slice(-30); 
 
   const formatOrderTime = (dateString) => {
     if (!dateString) return "";
@@ -32,7 +63,6 @@ export default function DisplayScreen() {
   return (
     <div className="display-container">
       
-      {/* Naya Class Name Yahan Apply Kiya Gaya Hai */}
       <div className="tv-main-content">
         
         {/* ================= LEFT PANEL: PREPARING ================= */}
@@ -47,7 +77,8 @@ export default function DisplayScreen() {
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
 
-          <div className="order-list">
+          {/* Yahan ref={prepRef} lagaya gaya hai */}
+          <div className="order-list" ref={prepRef}>
             {preparingOrders.map(o => (
               <div key={o.id} className="grid-row order-card card-prep">
                 <div className="col-id id-prep">
@@ -81,7 +112,8 @@ export default function DisplayScreen() {
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
 
-          <div className="order-list">
+          {/* Yahan ref={collRef} lagaya gaya hai */}
+          <div className="order-list" ref={collRef}>
             {completedOrders.map(o => (
               <div key={o.id} className="grid-row order-card card-coll">
                 <div className="col-id id-coll">
