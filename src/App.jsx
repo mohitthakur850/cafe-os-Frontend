@@ -1,25 +1,43 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+
+// Aapke teeno pages import ho rahe hain
 import UserPage from './UserPage';
 import AdminPage from './AdminPage';
 import KitchenScreen from './KitchenScreen';
-import DisplayScreen from './DisplayScreen';
-
-export default function App() {
+function App() {
   return (
-    <Router>
+    <BrowserRouter>
+      {/* OPTIONAL: Yeh ek chhota sa hidden nav bar hai (sirf testing ke liye).
+        Jab aap cafe mein setup karenge toh isey hata dijiyega. 
+      */}
+      <div style={{ position: 'fixed', bottom: 5, right: 5, zIndex: 9999, opacity: 0.3 }}>
+        <Link to="/" style={linkStyle}>Kiosk</Link> | 
+        <Link to="/kitchen" style={linkStyle}>Kitchen</Link> | 
+        <Link to="/admin" style={linkStyle}>Admin</Link>
+      </div>
+
       <Routes>
-        {/* Main link par aane par sidha Customer ka menu khulega */}
+        {/* 1. Customer Kiosk Screen (Default Page) */}
         <Route path="/" element={<UserPage />} />
-        
-        {/* Yeh hidden links hain jo sirf aapko pata honge */}
+
+        {/* 2. Admin Dashboard */}
         <Route path="/admin" element={<AdminPage />} />
+
+        {/* 3. Kitchen Display System (KDS) */}
         <Route path="/kitchen" element={<KitchenScreen />} />
-        <Route path="/display" element={<DisplayScreen />} />
-        
-        {/* Agar koi galat link dalta hai, toh usey wapas menu par bhej dega */}
-        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
+
+const linkStyle = {
+  textDecoration: 'none', 
+  color: 'black', 
+  backgroundColor: 'white', 
+  padding: '2px 5px', 
+  borderRadius: '3px',
+  margin: '0 5px'
+};
+
+export default App;
