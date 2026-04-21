@@ -16,7 +16,7 @@ const KitchenScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Backend mein Status Update karne ka function (Accepted -> Preparing -> Ready)
+  // Status Update Function (Accepted -> Preparing -> Ready)
   const updateOrderStatus = async (id, newStatus) => {
     try {
       await axios.put(`https://cafe-os-backend.onrender.com/orders/${id}/status?status=${newStatus}`);
@@ -26,8 +26,18 @@ const KitchenScreen = () => {
     }
   };
 
-  // Kitchen mein sirf Accepted aur Preparing orders hi dikhenge
-  const activeOrders = orders.filter(o => o.status === 'Accepted' || o.status === 'Preparing');
+  // Hand Over Function (Delete order completely)
+  const handleCompleteOrder = async (id) => {
+    try {
+      await axios.delete(`https://cafe-os-backend.onrender.com/orders/${id}`);
+      fetchOrders(); 
+    } catch (error) {
+      alert('Error completing order');
+    }
+  };
+
+  // FIX: Ab Kitchen mein 'Ready' orders bhi dikhenge taaki unhe Hand over kiya ja sake
+  const activeOrders = orders.filter(o => o.status === 'Accepted' || o.status === 'Preparing' || o.status === 'Ready');
 
   return (
     <div style={{ backgroundColor: '#f0fdfa', minHeight: '100vh', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
@@ -51,17 +61,33 @@ const KitchenScreen = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', alignItems: 'start' }}>
           {activeOrders.map((order) => {
             const isAccepted = order.status === 'Accepted';
+            const isPreparing = order.status === 'Preparing';
+            const isReady = order.status === 'Ready';
             
-            // UI Colors dynamically change based on status
-            const headerColor = isAccepted ? '#f5a623' : '#2196f3'; 
-            const btnColor = isAccepted ? '#0ea5e9' : '#22c55e';
-            const btnText = isAccepted ? '🔥 Start Preparing' : '✓ Mark as Ready';
-            const nextStatus = isAccepted ? 'Preparing' : 'Ready';
+            // UI Colors dynamically change based on ALL 3 statuses
+            let headerColor, btnColor, btnText, action;
+
+            if (isAccepted) {
+              headerColor = '#f5a623'; // Yellow
+              btnColor = '#0ea5e9';    // Blue
+              btnText = '🔥 Start Preparing';
+              action = () => updateOrderStatus(order.id, 'Preparing');
+            } else if (isPreparing) {
+              headerColor = '#2196f3'; // Blue
+              btnColor = '#22c55e';    // Green
+              btnText = '✓ Mark as Ready';
+              action = () => updateOrderStatus(order.id, 'Ready');
+            } else {
+              headerColor = '#22c55e'; // Green
+              btnColor = '#374151';    // Dark Gray (Handover Button)
+              btnText = '🤝 Hand Over';
+              action = () => handleCompleteOrder(order.id); // Yeh DB se hatayega
+            }
 
             return (
               <div key={order.id} style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
                 
-                {/* CARD TOP HEADER (Yellow or Blue) */}
+                {/* CARD TOP HEADER */}
                 <div style={{ backgroundColor: headerColor, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
                   <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '900' }}>#{order.id}</h2>
                   <span style={{ backgroundColor: 'rgba(255,255,255,0.3)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -99,7 +125,7 @@ const KitchenScreen = () => {
                 {/* ACTION BUTTON */}
                 <div style={{ padding: '0 20px 20px 20px' }}>
                   <button 
-                    onClick={() => updateOrderStatus(order.id, nextStatus)}
+                    onClick={action}
                     style={{ width: '100%', padding: '15px', backgroundColor: btnColor, color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', transition: '0.2s', boxShadow: `0 4px 10px ${btnColor}40` }}
                   >
                     {btnText}
