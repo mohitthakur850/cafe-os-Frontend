@@ -17,7 +17,7 @@ export default function DisplayScreen() {
     const socket = new WebSocket(WS_URL);
     socket.onmessage = (e) => {
       const msg = JSON.parse(e.data);
-      if(msg.type === "STATUS_UPDATE" || msg.type === "NEW_ORDER") {
+      if(msg.type === "STATUS_UPDATE" || msg.type === "NEW_ORDER" || msg.type === "ORDER_DELETED") {
          fetch(`${API_URL}/orders`).then(res => res.json()).then(setOrders);
       }
     };
@@ -51,8 +51,9 @@ export default function DisplayScreen() {
   // =====================================================
 
   const preparingOrders = orders.filter(o => o.status === 'Preparing');
-  // Limit badha kar 30 kar di hai taaki purane orders bhi scroll hote hue dikhein
-  const completedOrders = orders.filter(o => o.status === 'Completed').slice(-30); 
+  
+  // FIX: 'Completed' ki jagah 'Ready' kar diya gaya hai, kyunki Kitchen 'Ready' set karta hai
+  const readyOrders = orders.filter(o => o.status === 'Ready').slice(-30); 
 
   const formatOrderTime = (dateString) => {
     if (!dateString) return "";
@@ -77,7 +78,6 @@ export default function DisplayScreen() {
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
 
-          {/* Yahan ref={prepRef} lagaya gaya hai */}
           <div className="order-list" ref={prepRef}>
             {preparingOrders.map(o => (
               <div key={o.id} className="grid-row order-card card-prep">
@@ -112,9 +112,8 @@ export default function DisplayScreen() {
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
 
-          {/* Yahan ref={collRef} lagaya gaya hai */}
           <div className="order-list" ref={collRef}>
-            {completedOrders.map(o => (
+            {readyOrders.map(o => (
               <div key={o.id} className="grid-row order-card card-coll">
                 <div className="col-id id-coll">
                   #{o.id}
@@ -127,7 +126,7 @@ export default function DisplayScreen() {
                 </div>
               </div>
             ))}
-            {completedOrders.length === 0 && (
+            {readyOrders.length === 0 && (
               <p style={{ textAlign: 'center', color: '#7bdcb5', marginTop: '20px', fontWeight: 'bold' }}>
                 All orders collected.
               </p>
@@ -140,7 +139,7 @@ export default function DisplayScreen() {
       {/* ================= ANIMATED FOOTER SCROLLER ================= */}
       <div className="footer-scroller">
          <div className="marquee">
-            🍔 Welcome to RE:FILL! Freshly prepared, just for you. ☕
+           🍔 Welcome to RE:FILL! Freshly prepared, just for you. ☕
          </div>
       </div>
 
