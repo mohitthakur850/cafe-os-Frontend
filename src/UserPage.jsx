@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// --- EMBEDDED CSS ANIMATIONS (Updated with Screensaver Zoom) ---
 const uiStyles = `
   @keyframes slideUpFade { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
   @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes pulseHeart { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+  @keyframes pulseHeart { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+  @keyframes slowZoom { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  
+  .idle-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; animation: slowZoom 20s ease-in-out infinite; z-index: -2; }
+  .idle-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)); z-index: -1; }
+  
   .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
   .pop-in { animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .animated-grid { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -27,7 +33,6 @@ const UserPage = () => {
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   
-  // Naya state "SUCCESS" add kiya gaya hai aur Order ID store karne ke liye
   const [activeScreen, setActiveScreen] = useState('IDLE'); 
   const [placedOrderId, setPlacedOrderId] = useState(null);
 
@@ -96,13 +101,10 @@ const UserPage = () => {
     
     try {
       const res = await axios.post('https://cafe-os-backend.onrender.com/orders', newOrder);
-      
-      // Order place hone par ID save karein aur Success screen dikhayein
       setPlacedOrderId(res.data.id);
       setIsCartOpen(false);
       setActiveScreen('SUCCESS');
       
-      // 6 second baad automatic Home screen par le jayein naye customer ke liye
       setTimeout(() => {
         handleRestart();
       }, 6000);
@@ -171,20 +173,46 @@ const UserPage = () => {
   const currentCategoryData = dynamicCategories.find(c => c.main === activeCategory);
 
   // ==========================================
-  // 1. SCREEN: TOUCH TO START
+  // 1. SCREEN: TOUCH TO START (Naya Premium Design)
   // ==========================================
   if (activeScreen === 'IDLE') {
     return (
-      <div onClick={() => setActiveScreen('HOME')} style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', backgroundColor: '#ffcc00', color: '#333' }}>
+      <div onClick={() => setActiveScreen('HOME')} style={{ height: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', overflow: 'hidden' }}>
         <style>{uiStyles}</style>
-        <h1 style={{ fontSize: '6rem', marginBottom: '10px', letterSpacing: '-2px' }}>RE:FILL CAFE</h1>
-        <p style={{ fontSize: '2.5rem', animation: 'pulseHeart 1.5s infinite', fontWeight: 'bold', color: '#555' }}>👇 Touch Anywhere to Start 👇</p>
+        
+        {/* Screensaver Background & Overlay */}
+        <img 
+          src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop" 
+          alt="Cafe Background" 
+          className="idle-bg" 
+        />
+        <div className="idle-overlay"></div>
+
+        {/* Premium Typography Content */}
+        <h1 className="fade-in" style={{ fontSize: '7rem', margin: '0 0 20px 0', letterSpacing: '2px', color: 'white', fontWeight: '900', textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+          RE:FILL <span style={{ color: '#ffcc00' }}>CAFE</span>
+        </h1>
+        
+        <p style={{ 
+          fontSize: '2.2rem', 
+          animation: 'pulseHeart 2s infinite', 
+          fontWeight: 'bold', 
+          color: '#222', 
+          backgroundColor: '#ffcc00', 
+          padding: '18px 45px', 
+          borderRadius: '50px', 
+          boxShadow: '0 10px 25px rgba(255, 204, 0, 0.4)',
+          textTransform: 'uppercase',
+          letterSpacing: '1px'
+        }}>
+          👆 Touch Anywhere to Start
+        </p>
       </div>
     );
   }
 
   // ==========================================
-  // 4. NAYI SCREEN: ORDER SUCCESS SCREEN
+  // 2. SCREEN: ORDER SUCCESS SCREEN
   // ==========================================
   if (activeScreen === 'SUCCESS') {
     return (
@@ -193,29 +221,17 @@ const UserPage = () => {
         <div className="pop-in" style={{ maxWidth: '800px', width: '100%' }}>
           
           <div style={{ fontSize: '7rem', marginBottom: '20px', animation: 'pulseHeart 2s infinite' }}>✅</div>
-          
-          <h1 style={{ fontSize: '4.5rem', margin: '0 0 10px 0', color: '#16a34a', fontWeight: '900', letterSpacing: '-1px' }}>
-            Order Placed!
-          </h1>
-          
-          <p style={{ fontSize: '2.2rem', color: '#4b5563', margin: '0 0 40px 0' }}>
-            Thank you, <span style={{ color: '#1f2937', fontWeight: '800' }}>{customerName}</span>
-          </p>
+          <h1 style={{ fontSize: '4.5rem', margin: '0 0 10px 0', color: '#16a34a', fontWeight: '900', letterSpacing: '-1px' }}>Order Placed!</h1>
+          <p style={{ fontSize: '2.2rem', color: '#4b5563', margin: '0 0 40px 0' }}>Thank you, <span style={{ color: '#1f2937', fontWeight: '800' }}>{customerName}</span></p>
 
           <div style={{ backgroundColor: 'white', padding: '40px 60px', borderRadius: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.08)', display: 'inline-block', marginBottom: '50px', border: '3px dashed #22c55e' }}>
-            <p style={{ fontSize: '1.6rem', color: '#6b7280', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>
-              Your Order Number
-            </p>
-            <h2 style={{ fontSize: '6rem', margin: 0, color: '#111827', fontWeight: '900' }}>
-              #{placedOrderId}
-            </h2>
+            <p style={{ fontSize: '1.6rem', color: '#6b7280', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>Your Order Number</p>
+            <h2 style={{ fontSize: '6rem', margin: 0, color: '#111827', fontWeight: '900' }}>#{placedOrderId}</h2>
           </div>
 
           <div style={{ backgroundColor: '#fff7ed', padding: '20px 40px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '20px', border: '2px solid #fdba74' }}>
             <span style={{ fontSize: '3rem' }}>👨‍🍳</span>
-            <span style={{ fontSize: '1.8rem', color: '#c2410c', fontWeight: 'bold' }}>
-              Our chefs are pouring love into your food right now...
-            </span>
+            <span style={{ fontSize: '1.8rem', color: '#c2410c', fontWeight: 'bold' }}>Our chefs are pouring love into your food right now...</span>
           </div>
 
         </div>
@@ -223,6 +239,9 @@ const UserPage = () => {
     );
   }
 
+  // ==========================================
+  // 3. SCREEN: HOME & MENU 
+  // ==========================================
   return (
     <div style={{ backgroundColor: '#f9f9f9', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <style>{uiStyles}</style>
