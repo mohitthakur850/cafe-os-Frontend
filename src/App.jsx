@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 
 import UserPage from './UserPage';
 import AdminPage from './AdminPage';
-import KitchenPage from './KitchenPage';
+import KitchenScreen from './KitchenScreen';
 
 function App() {
   return (
@@ -19,7 +19,7 @@ function App() {
         <Route path="/" element={<UserPage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/display" element={<KitchenPage />} />
-        <Route path="/kitchen" element={<KitchenPage />} />
+        <Route path="/kitchen" element={<KitchenScreen />} />
       </Routes>
     </BrowserRouter>
   );
