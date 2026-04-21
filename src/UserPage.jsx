@@ -21,6 +21,7 @@ const uiStyles = `
 const UserPage = () => {
   const [products, setProducts] = useState([]);
   const [dynamicCategories, setDynamicCategories] = useState([]); 
+  const [isLoading, setIsLoading] = useState(true);
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   
@@ -35,17 +36,39 @@ const UserPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const productRes = await axios.get('https://cafe-os-backend.onrender.com/products');
-        const catRes = await axios.get('https://cafe-os-backend.onrender.com/categories');
+        const [productRes, catRes] = await Promise.all([
+          axios.get('https://cafe-os-backend.onrender.com/products'),
+          axios.get('https://cafe-os-backend.onrender.com/categories')
+        ]);
+        
         setProducts(productRes.data);
         
-        const formattedCats = catRes.data.map(c => ({
-          main: c.name,
-          image: c.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-          subs: [...new Set(productRes.data.filter(p => p.category === c.name).map(p => p.subCategory).filter(Boolean))]
-        }));
+        let formattedCats = [];
+        if (catRes.data.length > 0) {
+          formattedCats = catRes.data.map(c => ({
+            main: c.name,
+            image: c.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+            subs: [...new Set(productRes.data.filter(p => p.category === c.name).map(p => p.subCategory).filter(Boolean))]
+          }));
+        } else if (productRes.data.length > 0) {
+          const categoryMap = {};
+          productRes.data.forEach(product => {
+            if (!product.category) return;
+            if (!categoryMap[product.category]) categoryMap[product.category] = new Set();
+            if (product.subCategory) categoryMap[product.category].add(product.subCategory);
+          });
+          formattedCats = Object.keys(categoryMap).map(catName => ({
+            main: catName,
+            image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
+            subs: Array.from(categoryMap[catName])
+          }));
+        }
         setDynamicCategories(formattedCats);
-      } catch(e) { console.log("Error loading user data"); }
+      } catch(e) { 
+        console.error("Error loading user data", e); 
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -73,7 +96,8 @@ const UserPage = () => {
   };
 
   const confirmAddToCart = () => {
-    const basePrice = selectedProduct.price || 150; 
+    // FIX: price !== undefined taaki 0 work kare
+    const basePrice = selectedProduct.price !== undefined ? selectedProduct.price : 150; 
     const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
     
     const existingIndex = cart.findIndex(item => {
@@ -145,15 +169,25 @@ const UserPage = () => {
             <h1 style={{ fontSize: '4rem', margin: 0, color: '#222', fontWeight: '800', letterSpacing: '-1px' }}>What are you craving?</h1>
             <p style={{ fontSize: '1.5rem', color: '#666', marginTop: '10px' }}>Tap a category to start your order</p>
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '30px', maxWidth: '1200px', margin: '0 auto' }}>
-            {dynamicCategories.length === 0 ? <h3 style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}>Loading Menu...</h3> : dynamicCategories.map(cat => (
+            {isLoading ? (
+              <h3 style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}>Loading Menu...</h3>
+            ) : dynamicCategories.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}>
+                <h2>Menu is empty!</h2>
+                <p>Please add products or categories from the Admin Panel.</p>
+              </div>
+            ) : (
+              dynamicCategories.map(cat => (
                 <div key={cat.main} className="product-card" onClick={() => { setActiveCategory(cat.main); setActiveSubCategory('All'); setActiveScreen('MENU'); }} style={{ height: '200px', borderRadius: '24px', overflow: 'hidden', position: 'relative', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.06)' }}>
                   <img src={cat.image} alt={cat.main} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: '20px', background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)', boxSizing: 'border-box' }}>
                     <h2 style={{ color: 'white', margin: 0, fontSize: '1.8rem', fontWeight: '700' }}>{cat.main}</h2>
                   </div>
                 </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
@@ -162,11 +196,13 @@ const UserPage = () => {
       {activeScreen === 'MENU' && (
         <div style={{ display: 'flex', height: '100%', paddingBottom: cart.length > 0 ? '100px' : '0', boxSizing: 'border-box' }}>
           
-          {/* SIDEBAR */}
           <div style={{ width: '280px', backgroundColor: 'white', borderRight: '1px solid #eaeaea', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
             <div style={{ padding: '25px 20px', borderBottom: '1px solid #eaeaea' }}>
-              <button className="product-card" onClick={() => setActiveScreen('HOME')} style={{ width: '100%', padding: '15px', backgroundColor: '#f1f3f5', color: '#333', border: 'none', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>🏠 Go Home</button>
+              <button className="product-card" onClick={() => setActiveScreen('HOME')} style={{ width: '100%', padding: '15px', backgroundColor: '#f1f3f5', color: '#333', border: 'none', borderRadius: '16px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                🏠 Go Home
+              </button>
             </div>
+            
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px 15px' }}>
               {dynamicCategories.map(cat => {
                 const isActive = activeCategory === cat.main;
@@ -180,38 +216,51 @@ const UserPage = () => {
             </div>
           </div>
 
-          {/* MAIN MENU PANE */}
           <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#fcfcfc', display: 'flex', flexDirection: 'column' }}>
+            
             {currentCategoryData && (
               <div key={activeCategory + '-banner'} className="fade-in" style={{ width: '100%', height: '240px', position: 'relative', flexShrink: 0 }}>
                 <img src={currentCategoryData.image} alt={activeCategory} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.1) 100%)' }}></div>
-                <h1 style={{ position: 'absolute', bottom: '25px', left: '40px', margin: 0, fontSize: '4rem', color: 'white', fontWeight: '900', letterSpacing: '-1px' }}>{activeCategory.toUpperCase()}</h1>
+                <h1 style={{ position: 'absolute', bottom: '25px', left: '40px', margin: 0, fontSize: '4rem', color: 'white', fontWeight: '900', letterSpacing: '-1px' }}>
+                  {activeCategory.toUpperCase()}
+                </h1>
               </div>
             )}
 
             <div style={{ padding: '40px' }}>
               {currentCategoryData && currentCategoryData.subs.length > 0 && (
                 <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', marginBottom: '40px', paddingBottom: '10px' }}>
-                  <div className="sub-cat-chip" onClick={() => setActiveSubCategory('All')} style={{ padding: '10px 25px', borderRadius: '30px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', backgroundColor: activeSubCategory === 'All' ? '#333' : 'white', color: activeSubCategory === 'All' ? 'white' : '#555', border: activeSubCategory === 'All' ? '2px solid #333' : '2px solid #eaeaea' }}>All</div>
+                  <div className="sub-cat-chip" onClick={() => setActiveSubCategory('All')} style={{ padding: '10px 25px', borderRadius: '30px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', backgroundColor: activeSubCategory === 'All' ? '#333' : 'white', color: activeSubCategory === 'All' ? 'white' : '#555', border: activeSubCategory === 'All' ? '2px solid #333' : '2px solid #eaeaea', boxShadow: activeSubCategory === 'All' ? '0 4px 10px rgba(0,0,0,0.1)' : 'none' }}>All</div>
                   {currentCategoryData.subs.map(sub => (
-                    <div key={sub} className="sub-cat-chip" onClick={() => setActiveSubCategory(sub)} style={{ padding: '10px 25px', borderRadius: '30px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', backgroundColor: activeSubCategory === sub ? '#333' : 'white', color: activeSubCategory === sub ? 'white' : '#555', border: activeSubCategory === sub ? '2px solid #333' : '2px solid #eaeaea' }}>{sub}</div>
+                    <div key={sub} className="sub-cat-chip" onClick={() => setActiveSubCategory(sub)} style={{ padding: '10px 25px', borderRadius: '30px', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold', backgroundColor: activeSubCategory === sub ? '#333' : 'white', color: activeSubCategory === sub ? 'white' : '#555', border: activeSubCategory === sub ? '2px solid #333' : '2px solid #eaeaea', boxShadow: activeSubCategory === sub ? '0 4px 10px rgba(0,0,0,0.1)' : 'none' }}>{sub}</div>
                   ))}
                 </div>
               )}
 
               <div key={activeCategory + activeSubCategory} className="animated-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '30px' }}>
-                {displayProducts.length === 0 ? <p style={{ color: '#888', fontSize: '1.2rem', marginTop: '20px', gridColumn: '1 / -1' }}>No items found.</p> : displayProducts.map(product => {
+                {displayProducts.length === 0 ? (
+                  <p style={{ color: '#888', fontSize: '1.2rem', marginTop: '20px', gridColumn: '1 / -1' }}>No items found in this category yet.</p>
+                ) : (
+                  displayProducts.map(product => {
                     const qtyInCart = getProductTotalQty(product._id || product.id);
+                    
                     return (
                       <div key={product._id || product.id} className="product-card" style={{ backgroundColor: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 6px 16px rgba(0,0,0,0.04)', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
                         <img src={product.image || "https://via.placeholder.com/150"} alt={product.name} style={{ width: '100%', height: '170px', objectFit: 'cover', borderRadius: '16px' }} />
                         <h3 style={{ margin: '15px 0 5px 0', color: '#222', fontSize: '1.2rem' }}>{product.name}</h3>
-                        <p style={{ margin: '0 0 auto 0', color: '#777', fontSize: '0.9rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description || "Freshly prepared and packed with flavors."}</p>
+                        <p style={{ margin: '0 0 auto 0', color: '#777', fontSize: '0.9rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {product.description || "Freshly prepared and packed with flavors to satisfy your cravings."}
+                        </p>
+                        
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                          <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price || 150}</span>
+                          {/* FIX: p.price !== undefined use kiya gaya hai 0 dikhane ke liye */}
+                          <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 150}</span>
+                          
                           {qtyInCart === 0 ? (
-                            <button onClick={() => openAddonModal(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>+ ADD</button>
+                            <button onClick={() => openAddonModal(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>
+                              + ADD
+                            </button>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#eefaf2', borderRadius: '30px', padding: '5px 8px', border: '2px solid #28a745' }}>
                               <button onClick={() => handleMinusFromMenu(product._id || product.id)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
@@ -223,14 +272,14 @@ const UserPage = () => {
                       </div>
                     );
                   })
-                }
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ADD-ON MODAL */}
+      {/* OVERLAYS & GLOBAL STICKY CART */}
       {selectedProduct && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
           <div style={{ width: '500px', backgroundColor: 'white', borderTopLeftRadius: '35px', borderTopRightRadius: '35px', padding: '40px', boxSizing: 'border-box', animation: 'slideUpFade 0.3s forwards' }}>
@@ -238,8 +287,10 @@ const UserPage = () => {
               <h2 style={{ margin: 0, fontSize: '1.8rem', color: '#222' }}>Customize</h2>
               <button onClick={() => setSelectedProduct(null)} style={{ border: 'none', background: '#f1f3f5', borderRadius: '50%', width: '40px', height: '40px', fontSize: '1.5rem', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#555' }}>✕</button>
             </div>
+            
             <h3 style={{ margin: '0 0 5px 0', color: '#333' }}>{selectedProduct.name}</h3>
             <h4 style={{ color: '#888', marginBottom: '20px', fontWeight: 'normal' }}>Add Extras (Optional)</h4>
+            
             <div style={{ marginBottom: '35px', maxHeight: '250px', overflowY: 'auto' }}>
               {selectedProduct.addons && selectedProduct.addons.length > 0 ? (
                 selectedProduct.addons.map(addon => {
@@ -251,25 +302,30 @@ const UserPage = () => {
                     </div>
                   );
                 })
-              ) : <p style={{ color: '#888' }}>No extra add-ons available.</p>}
+              ) : (
+                <p style={{ color: '#888' }}>No extra add-ons available for this item.</p>
+              )}
             </div>
             <button onClick={confirmAddToCart} className="product-card" style={{ width: '100%', padding: '22px', backgroundColor: '#ffcc00', color: '#222', border: 'none', borderRadius: '20px', fontSize: '1.3rem', cursor: 'pointer', fontWeight: '900', display: 'flex', justifyContent: 'space-between', paddingLeft: '30px', paddingRight: '30px' }}>
-              <span>Add to Tray</span><span>₹{(selectedProduct.price || 150) + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
+              <span>Add to Tray</span>
+              {/* FIX: Modal Total mein bhi 0 kaam karega */}
+              <span>₹{(selectedProduct.price !== undefined ? selectedProduct.price : 150) + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* STICKY CART BAR */}
       {cart.length > 0 && !isCartOpen && (
         <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', backgroundColor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', boxShadow: '0 -10px 30px rgba(0,0,0,0.08)', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', zIndex: 100, borderTop: '1px solid #eee' }}>
           <button onClick={handleRestart} style={{ padding: '15px 30px', backgroundColor: '#ffebe6', color: '#d9534f', border: 'none', borderRadius: '16px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', transition: 'background 0.2s' }}>Cancel Order</button>
-          <div style={{ textAlign: 'center' }}><span style={{ fontSize: '1.1rem', color: '#888', fontWeight: '500' }}>{totalItemsCount} items added</span><h2 style={{ margin: '2px 0 0 0', fontSize: '2.2rem', color: '#222', fontWeight: '900' }}>₹{totalAmount}</h2></div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '1.1rem', color: '#888', fontWeight: '500' }}>{totalItemsCount} items added</span>
+            <h2 style={{ margin: '2px 0 0 0', fontSize: '2.2rem', color: '#222', fontWeight: '900' }}>₹{totalAmount}</h2>
+          </div>
           <button onClick={() => setIsCartOpen(true)} className="product-card" style={{ padding: '15px 40px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '16px', cursor: 'pointer', fontWeight: '800', fontSize: '1.3rem', boxShadow: '0 5px 15px rgba(40,167,69,0.3)' }}>View Tray ➔</button>
         </div>
       )}
 
-      {/* VIEW TRAY SLIDE-IN */}
       {isCartOpen && (
         <div style={{ position: 'fixed', top: 0, right: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)', zIndex: 999, display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ width: '450px', backgroundColor: 'white', padding: '30px', display: 'flex', flexDirection: 'column', boxShadow: '-10px 0 40px rgba(0,0,0,0.15)', animation: 'popIn 0.3s forwards', transformOrigin: 'right center' }}>
@@ -284,10 +340,16 @@ const UserPage = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#333' }}>{item.name}</span>
-                      {item.addons && item.addons.length > 0 && <div style={{ color: '#888', fontSize: '0.9rem', marginTop: '4px' }}>+ {item.addons.map(a => a.name).join(', ')}</div>}
+                      {item.addons && item.addons.length > 0 && (
+                        <div style={{ color: '#888', fontSize: '0.9rem', marginTop: '4px' }}>
+                          + {item.addons.map(a => a.name).join(', ')}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#222', marginBottom: '10px' }}>₹{item.itemTotal * item.quantity}</span>
+                      <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#222', marginBottom: '10px' }}>
+                        ₹{item.itemTotal * item.quantity}
+                      </span>
                       <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f3f5', borderRadius: '30px', padding: '5px' }}>
                         <button className="qty-btn" onClick={() => updateQuantity(item.cartId, -1)}>-</button>
                         <span style={{ margin: '0 15px', fontWeight: '900', fontSize: '1.2rem', color: '#333' }}>{item.quantity}</span>
