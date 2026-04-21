@@ -12,11 +12,10 @@ const KitchenScreen = () => {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(() => fetchOrders(), 3000); // Har 3 second mein fast update
+    const interval = setInterval(() => fetchOrders(), 3000); 
     return () => clearInterval(interval);
   }, []);
 
-  // Status Update Function (Accepted -> Preparing -> Ready)
   const updateOrderStatus = async (id, newStatus) => {
     try {
       await axios.put(`https://cafe-os-backend.onrender.com/orders/${id}/status?status=${newStatus}`);
@@ -26,7 +25,6 @@ const KitchenScreen = () => {
     }
   };
 
-  // Hand Over Function (Delete order completely)
   const handleCompleteOrder = async (id) => {
     try {
       await axios.delete(`https://cafe-os-backend.onrender.com/orders/${id}`);
@@ -36,13 +34,11 @@ const KitchenScreen = () => {
     }
   };
 
-  // FIX: Ab Kitchen mein 'Ready' orders bhi dikhenge taaki unhe Hand over kiya ja sake
   const activeOrders = orders.filter(o => o.status === 'Accepted' || o.status === 'Preparing' || o.status === 'Ready');
 
   return (
     <div style={{ backgroundColor: '#f0fdfa', minHeight: '100vh', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
       
-      {/* HEADER */}
       <div style={{ backgroundColor: 'white', padding: '15px 30px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <h1 style={{ margin: 0, color: '#333', fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
           Kitchen Orders 👨‍🍳
@@ -62,32 +58,32 @@ const KitchenScreen = () => {
           {activeOrders.map((order) => {
             const isAccepted = order.status === 'Accepted';
             const isPreparing = order.status === 'Preparing';
-            const isReady = order.status === 'Ready';
             
-            // UI Colors dynamically change based on ALL 3 statuses
             let headerColor, btnColor, btnText, action;
 
+            // FIX: order.id ki jagah MongoDB ka unique order._id use kiya gaya hai actions ke liye
+            const uniqueTargetId = order._id || order.id;
+
             if (isAccepted) {
-              headerColor = '#f5a623'; // Yellow
-              btnColor = '#0ea5e9';    // Blue
+              headerColor = '#f5a623'; 
+              btnColor = '#0ea5e9';    
               btnText = '🔥 Start Preparing';
-              action = () => updateOrderStatus(order.id, 'Preparing');
+              action = () => updateOrderStatus(uniqueTargetId, 'Preparing');
             } else if (isPreparing) {
-              headerColor = '#2196f3'; // Blue
-              btnColor = '#22c55e';    // Green
+              headerColor = '#2196f3'; 
+              btnColor = '#22c55e';    
               btnText = '✓ Mark as Ready';
-              action = () => updateOrderStatus(order.id, 'Ready');
+              action = () => updateOrderStatus(uniqueTargetId, 'Ready');
             } else {
-              headerColor = '#22c55e'; // Green
-              btnColor = '#374151';    // Dark Gray (Handover Button)
+              headerColor = '#22c55e'; 
+              btnColor = '#e74c3c';    // Red for Handover to make it distinct
               btnText = '🤝 Hand Over';
-              action = () => handleCompleteOrder(order.id); // Yeh DB se hatayega
+              action = () => handleCompleteOrder(uniqueTargetId); 
             }
 
             return (
-              <div key={order.id} style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
+              <div key={order._id || order.id} style={{ backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
                 
-                {/* CARD TOP HEADER */}
                 <div style={{ backgroundColor: headerColor, padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
                   <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '900' }}>#{order.id}</h2>
                   <span style={{ backgroundColor: 'rgba(255,255,255,0.3)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -95,14 +91,11 @@ const KitchenScreen = () => {
                   </span>
                 </div>
                 
-                {/* CARD BODY */}
                 <div style={{ padding: '20px', flex: 1 }}>
-                  {/* Customer Name */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#1f2937', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '15px', borderBottom: '2px solid #f3f4f6', paddingBottom: '15px' }}>
                     👤 {order.customer_name}
                   </div>
                   
-                  {/* Item List */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {order.items && order.items.map((item, i) => (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', color: '#4b5563', fontSize: '1rem', fontWeight: '500' }}>
@@ -122,7 +115,6 @@ const KitchenScreen = () => {
                   </div>
                 </div>
 
-                {/* ACTION BUTTON */}
                 <div style={{ padding: '0 20px 20px 20px' }}>
                   <button 
                     onClick={action}
