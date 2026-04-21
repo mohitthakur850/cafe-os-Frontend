@@ -3,9 +3,11 @@ import axios from 'axios';
 
 const uiStyles = `
   @keyframes slideUpFade { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
-  @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes fadeIn { from { opacity: 0.4; } to { opacity: 1; } }
+  @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pulseHeart { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
   .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+  .pop-in { animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .animated-grid { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .product-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
   .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important; }
@@ -25,7 +27,10 @@ const UserPage = () => {
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   
+  // Naya state "SUCCESS" add kiya gaya hai aur Order ID store karne ke liye
   const [activeScreen, setActiveScreen] = useState('IDLE'); 
+  const [placedOrderId, setPlacedOrderId] = useState(null);
+
   const [activeCategory, setActiveCategory] = useState(''); 
   const [activeSubCategory, setActiveSubCategory] = useState('All');
   
@@ -76,17 +81,35 @@ const UserPage = () => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.itemTotal * item.quantity), 0);
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleRestart = () => { setActiveScreen('IDLE'); setCart([]); setCustomerName(''); setIsCartOpen(false); };
+  const handleRestart = () => { 
+    setActiveScreen('IDLE'); 
+    setCart([]); 
+    setCustomerName(''); 
+    setIsCartOpen(false); 
+    setPlacedOrderId(null);
+  };
 
   const handlePlaceOrder = async () => {
     if (cart.length === 0) return alert("Cart is empty!");
     if (!customerName) return alert("Please enter your name!");
     const newOrder = { customer_name: customerName, items: cart, total: totalAmount };
+    
     try {
-      await axios.post('https://cafe-os-backend.onrender.com/orders', newOrder);
-      alert(`Order Confirmed! Total: ₹${totalAmount}. ✅`);
-      handleRestart();
-    } catch (error) { alert("Error placing order"); }
+      const res = await axios.post('https://cafe-os-backend.onrender.com/orders', newOrder);
+      
+      // Order place hone par ID save karein aur Success screen dikhayein
+      setPlacedOrderId(res.data.id);
+      setIsCartOpen(false);
+      setActiveScreen('SUCCESS');
+      
+      // 6 second baad automatic Home screen par le jayein naye customer ke liye
+      setTimeout(() => {
+        handleRestart();
+      }, 6000);
+
+    } catch (error) { 
+      alert("Error placing order"); 
+    }
   };
 
   const openAddonModal = (product) => { setSelectedProduct(product); setSelectedAddons([]); };
@@ -96,7 +119,6 @@ const UserPage = () => {
   };
 
   const confirmAddToCart = () => {
-    // FIX: price !== undefined taaki 0 work kare
     const basePrice = selectedProduct.price !== undefined ? selectedProduct.price : 150; 
     const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
     
@@ -148,12 +170,55 @@ const UserPage = () => {
   }
   const currentCategoryData = dynamicCategories.find(c => c.main === activeCategory);
 
+  // ==========================================
+  // 1. SCREEN: TOUCH TO START
+  // ==========================================
   if (activeScreen === 'IDLE') {
     return (
       <div onClick={() => setActiveScreen('HOME')} style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', backgroundColor: '#ffcc00', color: '#333' }}>
         <style>{uiStyles}</style>
         <h1 style={{ fontSize: '6rem', marginBottom: '10px', letterSpacing: '-2px' }}>RE:FILL CAFE</h1>
-        <p style={{ fontSize: '2.5rem', animation: 'pulse 1.5s infinite', fontWeight: 'bold', color: '#555' }}>👇 Touch Anywhere to Start 👇</p>
+        <p style={{ fontSize: '2.5rem', animation: 'pulseHeart 1.5s infinite', fontWeight: 'bold', color: '#555' }}>👇 Touch Anywhere to Start 👇</p>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 4. NAYI SCREEN: ORDER SUCCESS SCREEN
+  // ==========================================
+  if (activeScreen === 'SUCCESS') {
+    return (
+      <div style={{ height: '100vh', backgroundColor: '#f0fdfa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
+        <style>{uiStyles}</style>
+        <div className="pop-in" style={{ maxWidth: '800px', width: '100%' }}>
+          
+          <div style={{ fontSize: '7rem', marginBottom: '20px', animation: 'pulseHeart 2s infinite' }}>✅</div>
+          
+          <h1 style={{ fontSize: '4.5rem', margin: '0 0 10px 0', color: '#16a34a', fontWeight: '900', letterSpacing: '-1px' }}>
+            Order Placed!
+          </h1>
+          
+          <p style={{ fontSize: '2.2rem', color: '#4b5563', margin: '0 0 40px 0' }}>
+            Thank you, <span style={{ color: '#1f2937', fontWeight: '800' }}>{customerName}</span>
+          </p>
+
+          <div style={{ backgroundColor: 'white', padding: '40px 60px', borderRadius: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.08)', display: 'inline-block', marginBottom: '50px', border: '3px dashed #22c55e' }}>
+            <p style={{ fontSize: '1.6rem', color: '#6b7280', margin: '0 0 10px 0', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>
+              Your Order Number
+            </p>
+            <h2 style={{ fontSize: '6rem', margin: 0, color: '#111827', fontWeight: '900' }}>
+              #{placedOrderId}
+            </h2>
+          </div>
+
+          <div style={{ backgroundColor: '#fff7ed', padding: '20px 40px', borderRadius: '100px', display: 'inline-flex', alignItems: 'center', gap: '20px', border: '2px solid #fdba74' }}>
+            <span style={{ fontSize: '3rem' }}>👨‍🍳</span>
+            <span style={{ fontSize: '1.8rem', color: '#c2410c', fontWeight: 'bold' }}>
+              Our chefs are pouring love into your food right now...
+            </span>
+          </div>
+
+        </div>
       </div>
     );
   }
@@ -254,7 +319,6 @@ const UserPage = () => {
                         </p>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                          {/* FIX: p.price !== undefined use kiya gaya hai 0 dikhane ke liye */}
                           <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 150}</span>
                           
                           {qtyInCart === 0 ? (
@@ -308,7 +372,6 @@ const UserPage = () => {
             </div>
             <button onClick={confirmAddToCart} className="product-card" style={{ width: '100%', padding: '22px', backgroundColor: '#ffcc00', color: '#222', border: 'none', borderRadius: '20px', fontSize: '1.3rem', cursor: 'pointer', fontWeight: '900', display: 'flex', justifyContent: 'space-between', paddingLeft: '30px', paddingRight: '30px' }}>
               <span>Add to Tray</span>
-              {/* FIX: Modal Total mein bhi 0 kaam karega */}
               <span>₹{(selectedProduct.price !== undefined ? selectedProduct.price : 150) + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
             </button>
           </div>
