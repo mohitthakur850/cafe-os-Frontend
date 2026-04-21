@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import UserPage from './UserPage';
 import AdminPage from './AdminPage';
 import KitchenScreen from './KitchenScreen';
+import DisplayScreen from './DisplayScreen';
 function App() {
   return (
     <BrowserRouter>
@@ -26,6 +27,7 @@ function App() {
 
         {/* 3. Kitchen Display System (KDS) */}
         <Route path="/kitchen" element={<KitchenScreen />} />
+        <Route path="/display" element={<DisplayScreen />} />
       </Routes>
     </BrowserRouter>
   );
