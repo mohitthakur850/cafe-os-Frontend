@@ -3,67 +3,33 @@ import axios from 'axios';
 
 // --- EMBEDDED CSS ANIMATIONS ---
 const uiStyles = `
-  @keyframes slideUpFade {
-    0% { opacity: 0; transform: translateY(30px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes popIn {
-    0% { transform: scale(0.95); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0.4; }
-    to { opacity: 1; }
-  }
-  .fade-in {
-    animation: fadeIn 0.4s ease-in-out forwards;
-  }
-  .animated-grid {
-    animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  }
-  .product-card {
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  }
-  .product-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
-  }
-  .sidebar-btn {
-    transition: all 0.3s ease;
-  }
-  .sidebar-btn:hover {
-    transform: translateX(5px);
-    background-color: #f8f9fa;
-  }
-  .sidebar-btn.active {
-    background-color: #ffcc00 !important;
-    transform: translateX(8px);
-    box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4) !important;
-    border: none !important;
-  }
-  .sub-cat-chip {
-    transition: all 0.2s ease;
-  }
-  .sub-cat-chip:active {
-    transform: scale(0.9);
-  }
-  .qty-btn {
-    width: 35px; height: 35px; border-radius: 50%; border: none; 
-    background-color: white; font-size: 1.2rem; font-weight: bold; 
-    cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s;
-    display: flex; justify-content: center; align-items: center;
-  }
+  @keyframes slideUpFade { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
+  @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0.4; } to { opacity: 1; } }
+  .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+  .animated-grid { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .product-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+  .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important; }
+  .sidebar-btn { transition: all 0.3s ease; }
+  .sidebar-btn:hover { transform: translateX(5px); background-color: #f8f9fa; }
+  .sidebar-btn.active { background-color: #ffcc00 !important; transform: translateX(8px); box-shadow: 0 5px 15px rgba(255, 204, 0, 0.4) !important; border: none !important; }
+  .sub-cat-chip { transition: all 0.2s ease; }
+  .sub-cat-chip:active { transform: scale(0.9); }
+  .qty-btn { width: 35px; height: 35px; border-radius: 50%; border: none; background-color: white; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: 0.2s; display: flex; justify-content: center; align-items: center; }
   .qty-btn:active { transform: scale(0.9); }
 `;
 
-// --- DATA ---
-const menuCategories = [
-  { main: 'Burgers', image: 'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg', subs: ['Veg', 'Non-Veg', 'Special'] },
-  { main: 'Pizzas', image: 'https://images.pexels.com/photos/1146760/pexels-photo-1146760.jpeg', subs: ['Veg', 'Cheese Burst', 'Thin Crust'] },
-  { main: 'Beverages', image: 'https://images.pexels.com/photos/12108740/pexels-photo-12108740.jpeg', subs: ['Hot', 'Cold', 'Shakes'] },
-  { main: 'Snacks', image: 'https://images.pexels.com/photos/1583884/pexels-photo-1583884.jpeg', subs: ['Fries', 'Nachos', 'Wraps'] },
-  { main: 'Desserts', image: 'https://images.pexels.com/photos/45202/brownie-dessert-cake-sweet-45202.jpeg', subs: ['Cakes', 'Ice Cream'] }
-];
+// --- CATEGORY IMAGES DICTIONARY ---
+// Agar admin koi nayi category banata hai toh system yahan se photo uthayega
+const categoryImages = {
+  'Burgers': 'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg',
+  'Pizzas': 'https://images.pexels.com/photos/1146760/pexels-photo-1146760.jpeg',
+  'Beverages': 'https://images.pexels.com/photos/12108740/pexels-photo-12108740.jpeg',
+  'Snacks': 'https://images.pexels.com/photos/1583884/pexels-photo-1583884.jpeg',
+  'Desserts': 'https://images.pexels.com/photos/45202/brownie-dessert-cake-sweet-45202.jpeg',
+  'Momos': 'https://images.pexels.com/photos/5409015/pexels-photo-5409015.jpeg', // Nayi Momos ki photo!
+  'Default': 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg' // Koi nayi anjaan category banayi toh yeh photo aayegi
+};
 
 const availableAddons = [
   { name: 'Extra Cheese 🧀', price: 30 },
@@ -74,6 +40,7 @@ const availableAddons = [
 
 const UserPage = () => {
   const [products, setProducts] = useState([]);
+  const [dynamicCategories, setDynamicCategories] = useState([]); // NAYA: Categories ab database se banengi
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   
@@ -87,7 +54,33 @@ const UserPage = () => {
 
   useEffect(() => {
     axios.get('https://cafe-os-backend.onrender.com/products')
-      .then(res => setProducts(res.data))
+      .then(res => {
+        const fetchedProducts = res.data;
+        setProducts(fetchedProducts);
+
+        // --- AUTO-GENERATE CATEGORIES FROM DATABASE ---
+        const categoryMap = {};
+        
+        fetchedProducts.forEach(product => {
+          const catName = product.category;
+          if (!catName) return; // Agar category khali hai toh skip karo
+
+          if (!categoryMap[catName]) {
+            categoryMap[catName] = new Set();
+          }
+          if (product.subCategory) {
+            categoryMap[catName].add(product.subCategory);
+          }
+        });
+
+        const generatedCategories = Object.keys(categoryMap).map(catName => ({
+          main: catName,
+          image: categoryImages[catName] || categoryImages['Default'],
+          subs: Array.from(categoryMap[catName])
+        }));
+
+        setDynamicCategories(generatedCategories);
+      })
       .catch(err => console.error("Error fetching products", err));
   }, []);
 
@@ -95,16 +88,12 @@ const UserPage = () => {
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleRestart = () => {
-    setActiveScreen('IDLE'); 
-    setCart([]);
-    setCustomerName('');
-    setIsCartOpen(false);
+    setActiveScreen('IDLE'); setCart([]); setCustomerName(''); setIsCartOpen(false);
   };
 
   const handlePlaceOrder = async () => {
     if (cart.length === 0) return alert("Cart is empty!");
     if (!customerName) return alert("Please enter your name!");
-
     const newOrder = { customer_name: customerName, items: cart, total: totalAmount };
 
     try {
@@ -116,26 +105,18 @@ const UserPage = () => {
     }
   };
 
-  const openAddonModal = (product) => {
-    setSelectedProduct(product);
-    setSelectedAddons([]); 
-  };
-
+  const openAddonModal = (product) => { setSelectedProduct(product); setSelectedAddons([]); };
   const toggleAddon = (addon) => {
-    if (selectedAddons.some(a => a.name === addon.name)) {
-      setSelectedAddons(selectedAddons.filter(a => a.name !== addon.name));
-    } else {
-      setSelectedAddons([...selectedAddons, addon]);
-    }
+    if (selectedAddons.includes(addon)) { setSelectedAddons(selectedAddons.filter(a => a.name !== addon.name)); } 
+    else { setSelectedAddons([...selectedAddons, addon]); }
   };
 
-  // SMART CART LOGIC: Same items merge ho jayenge, alag add-ons wale alag rahenge
   const confirmAddToCart = () => {
-    const basePrice = 150; 
+    const basePrice = selectedProduct.price || 150; // Ab original price use hoga
     const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
     
     const existingIndex = cart.findIndex(item => {
-      if (item.id !== selectedProduct.id) return false;
+      if (item._id !== selectedProduct._id && item.id !== selectedProduct.id) return false;
       if (item.addons.length !== selectedAddons.length) return false;
       const existingStr = item.addons.map(a => a.name).sort().join(',');
       const newStr = selectedAddons.map(a => a.name).sort().join(',');
@@ -168,14 +149,12 @@ const UserPage = () => {
     if (updatedCart.length === 0) setIsCartOpen(false); 
   };
 
-  // MENU CARD KE LIYE FUNCTIONS
   const getProductTotalQty = (productId) => {
-    return cart.filter(item => item.id === productId).reduce((sum, item) => sum + item.quantity, 0);
+    return cart.filter(item => item._id === productId || item.id === productId).reduce((sum, item) => sum + item.quantity, 0);
   };
 
   const handleMinusFromMenu = (productId) => {
-    // Menu se minus karne par, cart mein jo is product ka aakhri item add hua tha, uski quantity kam hogi
-    const index = [...cart].reverse().findIndex(item => item.id === productId);
+    const index = [...cart].reverse().findIndex(item => item._id === productId || item.id === productId);
     if (index !== -1) {
       const actualIndex = cart.length - 1 - index;
       const targetCartId = cart[actualIndex].cartId;
@@ -183,12 +162,13 @@ const UserPage = () => {
     }
   };
 
-  let displayProducts = products.filter(p => p.category && p.category.toLowerCase().includes(activeCategory.toLowerCase()));
+  // Filter products for the menu display
+  let displayProducts = products.filter(p => p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
   if (activeSubCategory !== 'All') {
-    displayProducts = displayProducts.filter(p => p.category.toLowerCase().includes(activeSubCategory.toLowerCase()) || (p.name && p.name.toLowerCase().includes(activeSubCategory.toLowerCase())));
+    displayProducts = displayProducts.filter(p => (p.subCategory && p.subCategory.toLowerCase() === activeSubCategory.toLowerCase()));
   }
-  const currentCategoryData = menuCategories.find(c => c.main === activeCategory);
-
+  
+  const currentCategoryData = dynamicCategories.find(c => c.main === activeCategory);
 
   // ==========================================
   // 1. SCREEN: TOUCH TO START
@@ -218,14 +198,18 @@ const UserPage = () => {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '30px', maxWidth: '1200px', margin: '0 auto' }}>
-            {menuCategories.map(cat => (
-              <div key={cat.main} className="product-card" onClick={() => { setActiveCategory(cat.main); setActiveSubCategory('All'); setActiveScreen('MENU'); }} style={{ height: '200px', borderRadius: '24px', overflow: 'hidden', position: 'relative', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.06)' }}>
-                <img src={cat.image} alt={cat.main} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: '20px', background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)', boxSizing: 'border-box' }}>
-                  <h2 style={{ color: 'white', margin: 0, fontSize: '1.8rem', fontWeight: '700' }}>{cat.main}</h2>
+            {dynamicCategories.length === 0 ? (
+              <h3 style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}>Loading Menu...</h3>
+            ) : (
+              dynamicCategories.map(cat => (
+                <div key={cat.main} className="product-card" onClick={() => { setActiveCategory(cat.main); setActiveSubCategory('All'); setActiveScreen('MENU'); }} style={{ height: '200px', borderRadius: '24px', overflow: 'hidden', position: 'relative', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.06)' }}>
+                  <img src={cat.image} alt={cat.main} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: '20px', background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)', boxSizing: 'border-box' }}>
+                    <h2 style={{ color: 'white', margin: 0, fontSize: '1.8rem', fontWeight: '700' }}>{cat.main}</h2>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       )}
@@ -244,7 +228,7 @@ const UserPage = () => {
             </div>
             
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px 15px' }}>
-              {menuCategories.map(cat => {
+              {dynamicCategories.map(cat => {
                 const isActive = activeCategory === cat.main;
                 return (
                   <div key={cat.main} className={`sidebar-btn ${isActive ? 'active' : ''}`} onClick={() => { setActiveCategory(cat.main); setActiveSubCategory('All'); }} style={{ display: 'flex', alignItems: 'center', padding: '12px', marginBottom: '12px', borderRadius: '18px', cursor: 'pointer', border: '1px solid #eee' }}>
@@ -283,10 +267,10 @@ const UserPage = () => {
                   <p style={{ color: '#888', fontSize: '1.2rem', marginTop: '20px', gridColumn: '1 / -1' }}>No items found in this category yet.</p>
                 ) : (
                   displayProducts.map(product => {
-                    const qtyInCart = getProductTotalQty(product.id);
+                    const qtyInCart = getProductTotalQty(product._id || product.id);
                     
                     return (
-                      <div key={product.id} className="product-card" style={{ backgroundColor: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 6px 16px rgba(0,0,0,0.04)', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
+                      <div key={product._id || product.id} className="product-card" style={{ backgroundColor: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 6px 16px rgba(0,0,0,0.04)', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
                         <img src={product.image || "https://via.placeholder.com/150"} alt={product.name} style={{ width: '100%', height: '170px', objectFit: 'cover', borderRadius: '16px' }} />
                         <h3 style={{ margin: '15px 0 5px 0', color: '#222', fontSize: '1.2rem' }}>{product.name}</h3>
                         <p style={{ margin: '0 0 auto 0', color: '#777', fontSize: '0.9rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -294,18 +278,16 @@ const UserPage = () => {
                         </p>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                          <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹150</span>
+                          <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price || 150}</span>
                           
-                          {/* MENU CARD DYNAMIC BUTTON */}
                           {qtyInCart === 0 ? (
                             <button onClick={() => openAddonModal(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>
                               + ADD
                             </button>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#eefaf2', borderRadius: '30px', padding: '5px 8px', border: '2px solid #28a745' }}>
-                              <button onClick={() => handleMinusFromMenu(product.id)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
+                              <button onClick={() => handleMinusFromMenu(product._id || product.id)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
                               <span style={{ margin: '0 12px', fontWeight: '900', fontSize: '1.1rem', color: '#1e7e34' }}>{qtyInCart}</span>
-                              {/* Yahan + dabane par bhi Modal khulega (Aapki requirement ke hisaab se) */}
                               <button onClick={() => openAddonModal(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>+</button>
                             </div>
                           )}
@@ -335,20 +317,24 @@ const UserPage = () => {
             <h3 style={{ margin: '0 0 5px 0', color: '#333' }}>{selectedProduct.name}</h3>
             <h4 style={{ color: '#888', marginBottom: '20px', fontWeight: 'normal' }}>Add Extras (Optional)</h4>
             
-            <div style={{ marginBottom: '35px' }}>
-              {availableAddons.map(addon => {
-                const isSelected = selectedAddons.some(a => a.name === addon.name);
-                return (
-                  <div key={addon.name} onClick={() => toggleAddon(addon)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', border: `2px solid ${isSelected ? '#28a745' : '#eaeaea'}`, borderRadius: '16px', marginBottom: '12px', cursor: 'pointer', backgroundColor: isSelected ? '#f2fdf5' : 'white', transition: 'all 0.2s' }}>
-                    <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: isSelected ? '#1e7e34' : '#444' }}>{addon.name}</span>
-                    <span style={{ color: isSelected ? '#1e7e34' : '#666', fontWeight: 'bold' }}>+₹{addon.price}</span>
-                  </div>
-                );
-              })}
+            <div style={{ marginBottom: '35px', maxHeight: '250px', overflowY: 'auto' }}>
+              {selectedProduct.addons && selectedProduct.addons.length > 0 ? (
+                selectedProduct.addons.map(addon => {
+                  const isSelected = selectedAddons.includes(addon);
+                  return (
+                    <div key={addon.name} onClick={() => toggleAddon(addon)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', border: `2px solid ${isSelected ? '#28a745' : '#eaeaea'}`, borderRadius: '16px', marginBottom: '12px', cursor: 'pointer', backgroundColor: isSelected ? '#f2fdf5' : 'white', transition: 'all 0.2s' }}>
+                      <span style={{ fontWeight: 'bold', fontSize: '1.1rem', color: isSelected ? '#1e7e34' : '#444' }}>{addon.name}</span>
+                      <span style={{ color: isSelected ? '#1e7e34' : '#666', fontWeight: 'bold' }}>+₹{addon.price}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p style={{ color: '#888' }}>No extra add-ons available for this item.</p>
+              )}
             </div>
             <button onClick={confirmAddToCart} className="product-card" style={{ width: '100%', padding: '22px', backgroundColor: '#ffcc00', color: '#222', border: 'none', borderRadius: '20px', fontSize: '1.3rem', cursor: 'pointer', fontWeight: '900', display: 'flex', justifyContent: 'space-between', paddingLeft: '30px', paddingRight: '30px' }}>
               <span>Add to Tray</span>
-              <span>₹{150 + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
+              <span>₹{(selectedProduct.price || 150) + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
             </button>
           </div>
         </div>
@@ -377,7 +363,6 @@ const UserPage = () => {
               {cart.map((item) => (
                 <div key={item.cartId} style={{ padding: '20px 0', borderBottom: '1px solid #eaeaea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#333' }}>{item.name}</span>
                       {item.addons && item.addons.length > 0 && (
@@ -397,7 +382,6 @@ const UserPage = () => {
                         <button className="qty-btn" onClick={() => updateQuantity(item.cartId, 1)}>+</button>
                       </div>
                     </div>
-
                   </div>
                 </div>
               ))}
