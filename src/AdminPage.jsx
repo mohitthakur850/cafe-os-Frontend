@@ -56,7 +56,13 @@ const AdminPage = () => {
 
   const handleSaveProduct = async (e) => {
     e.preventDefault();
-    const data = { name, category, subCategory, description, image, price: Number(price)||150, addons: addons.filter(a => a.name) };
+    // FIX: "price === '' ? 150 : Number(price)" lagaya hai taaki 0 save ho sake
+    const data = { 
+      name, category, subCategory, description, image, 
+      price: price === '' ? 150 : Number(price), 
+      addons: addons.filter(a => a.name) 
+    };
+    
     try {
       if (editingId) {
         await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data);
@@ -228,7 +234,8 @@ const AdminPage = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <img src={p.image || 'https://via.placeholder.com/50'} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                     <div>
-                      <h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price}</span></h4>
+                      {/* FIX: p.price !== undefined use kiya gaya hai 0 dikhane ke liye */}
+                      <h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 150}</span></h4>
                       <div style={{ fontSize: '0.85rem', color: '#888' }}><strong>{p.category}</strong> {p.subCategory && `> ${p.subCategory}`}</div>
                     </div>
                   </div>
