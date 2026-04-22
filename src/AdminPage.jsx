@@ -1,39 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// --- NAYA: RESPONSIVE CSS STYLES ---
+// --- RESPONSIVE CSS STYLES ---
 const adminStyles = `
-  .admin-wrapper {
-    padding: 20px;
-    width: 100%;
-    box-sizing: border-box;
-    max-width: 100%;
-  }
-  @media (min-width: 768px) {
-    .admin-wrapper { padding: 30px 40px; }
-  }
-  @media (min-width: 1200px) {
-    .admin-wrapper { padding: 40px 60px; }
-  }
+  .admin-wrapper { padding: 20px; width: 100%; box-sizing: border-box; max-width: 100%; }
+  @media (min-width: 768px) { .admin-wrapper { padding: 30px 40px; } }
+  @media (min-width: 1200px) { .admin-wrapper { padding: 40px 60px; } }
   
-  /* Yeh jadoo karega - Screen ke hisaab se columns adjust honge */
-  .auto-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-  }
-  @media (min-width: 1440px) {
-    .auto-grid {
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 25px;
-    }
-  }
+  .auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+  @media (min-width: 1440px) { .auto-grid { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; } }
+  
+  /* Login Screen Animation */
+  @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .login-card { animation: slideDown 0.4s ease-out forwards; }
 `;
 
 const AdminPage = () => {
+  // ==========================================
+  // 🔐 1. AUTHENTICATION STATES (NAYA)
+  // ==========================================
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  // ==========================================
+  // 2. ADMIN DASHBOARD STATES (PURANA)
+  // ==========================================
   const [activeTab, setActiveTab] = useState('ORDERS'); 
   const [orderFilter, setOrderFilter] = useState('Today'); 
-
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -48,11 +43,37 @@ const AdminPage = () => {
   const [image, setImage] = useState('');
   const [price, setPrice] = useState('');
   const [addons, setAddons] = useState([{ name: '', price: '' }]);
-
   const [newCatName, setNewCatName] = useState('');
   const [newCatImg, setNewCatImg] = useState('');
 
+  // ==========================================
+  // 🔐 3. LOGIN LOGIC (NAYA)
+  // ==========================================
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // Yahan hum strict check kar rahe hain (Case Sensitive)
+    if (usernameInput === 'Root' && passwordInput === 'Admin123') {
+      setIsAuthenticated(true);
+      setLoginError('');
+    } else {
+      setLoginError('Invalid Username or Password! 🚫');
+      setPasswordInput(''); // Galat hone par password box khali kar do
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUsernameInput('');
+    setPasswordInput('');
+  };
+
+  // ==========================================
+  // 4. DATA FETCHING & LOGIC
+  // ==========================================
   const fetchData = async () => {
+    // Agar user login nahi hai, toh data fetch mat karo (Extra Security)
+    if (!isAuthenticated) return; 
+    
     try {
       const [pRes, oRes, cRes] = await Promise.all([
         axios.get('https://cafe-os-backend.onrender.com/products'),
@@ -67,74 +88,22 @@ const AdminPage = () => {
     fetchData();
     const interval = setInterval(() => fetchData(), 5000); 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]); // Jab login ho jaye, tabhi interval chalu ho
 
-  const toggleStock = async (product) => {
-    try {
-      const newStatus = product.isAvailable === false ? true : false;
-      await axios.put(`https://cafe-os-backend.onrender.com/products/${product._id || product.id}`, { isAvailable: newStatus });
-      fetchData(); 
-    } catch (error) {
-      alert('Error updating stock');
-    }
-  };
-
-  const handleImageUpload = (e, setImageState) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 2000000) return alert("File size should be less than 2MB.");
-      const reader = new FileReader();
-      reader.onloadend = () => setImageState(reader.result); 
-      reader.readAsDataURL(file);
-    }
-  };
-
+  // ... (Baaki saare function same rahenge)
+  const toggleStock = async (product) => { try { await axios.put(`https://cafe-os-backend.onrender.com/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch (error) { alert('Error updating stock'); } };
+  const handleImageUpload = (e, setImageState) => { const file = e.target.files[0]; if (file) { if (file.size > 2000000) return alert("File size should be less than 2MB."); const reader = new FileReader(); reader.onloadend = () => setImageState(reader.result); reader.readAsDataURL(file); } };
   const handleEditCategoryClick = (c) => { setEditingCatId(c._id); setNewCatName(c.name); setNewCatImg(c.image || ''); window.scrollTo(0, 0); };
   const cancelCategoryEdit = () => { setEditingCatId(null); setNewCatName(''); setNewCatImg(''); };
-  
-  const handleSaveCategory = async () => {
-    if(!newCatName) return;
-    try {
-      if (editingCatId) { await axios.put(`https://cafe-os-backend.onrender.com/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } 
-      else { await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg }); }
-      setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData();
-    } catch (error) { alert("Error saving category."); }
-  };
-
+  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend.onrender.com/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch (error) { alert("Error saving category."); } };
   const handleAddonChange = (index, field, value) => { const newAddons = [...addons]; newAddons[index][field] = value; setAddons(newAddons); };
   const addAddonRow = () => setAddons([...addons, { name: '', price: '' }]);
   const removeAddonRow = (index) => setAddons(addons.filter((_, i) => i !== index));
+  const handleEditClick = (p) => { setEditingId(p._id); setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || ''); setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price); setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); window.scrollTo(0, 0); };
+  const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend.onrender.com/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch (error) { alert('Error saving product'); } };
+  const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend.onrender.com/products/${id}`); fetchData(); } };
 
-  const handleEditClick = (p) => {
-    setEditingId(p._id); setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || '');
-    setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price);
-    setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); window.scrollTo(0, 0); 
-  };
-
-  const handleSaveProduct = async (e) => {
-    e.preventDefault();
-    const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) };
-    try {
-      if (editingId) { await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data); } 
-      else { await axios.post('https://cafe-os-backend.onrender.com/products', data); }
-      setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData();
-    } catch (error) { alert('Error saving product'); }
-  };
-
-  const handleDeleteProduct = async (id) => {
-    if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend.onrender.com/products/${id}`); fetchData(); }
-  };
-
-  const getFilteredOrders = () => {
-    const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
-    return orders.filter(order => {
-      const orderDate = new Date(order.createdAt || Date.now());
-      if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString();
-      if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString();
-      return true; 
-    });
-  };
-
+  const getFilteredOrders = () => { const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1); return orders.filter(order => { const orderDate = new Date(order.createdAt || Date.now()); if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); return true; }); };
   const allFilteredOrders = getFilteredOrders();
   const liveOrders = allFilteredOrders.filter(o => o.status !== 'Completed');
   const completedHistory = allFilteredOrders.filter(o => o.status === 'Completed');
@@ -164,17 +133,78 @@ const AdminPage = () => {
     </div>
   );
 
+  // ==========================================
+  // 🔐 5. RENDER LOGIN SCREEN (Agar Auth false hai)
+  // ==========================================
+  if (!isAuthenticated) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0', fontFamily: 'system-ui, sans-serif' }}>
+        <style>{adminStyles}</style>
+        <div className="login-card" style={{ backgroundColor: 'white', padding: '50px 40px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', width: '100%', maxWidth: '450px', textAlign: 'center', borderTop: '8px solid #333' }}>
+          
+          <div style={{ backgroundColor: '#f1f5f9', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', margin: '0 auto 20px auto' }}>
+            🔒
+          </div>
+          
+          <h1 style={{ margin: '0 0 10px 0', color: '#1e293b', fontSize: '2.2rem', letterSpacing: '-1px' }}>Admin Access</h1>
+          <p style={{ color: '#64748b', marginBottom: '35px', fontSize: '1.1rem' }}>Please verify your credentials to continue.</p>
+          
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <input 
+              type="text" 
+              placeholder="Username" 
+              value={usernameInput} 
+              onChange={e => setUsernameInput(e.target.value)} 
+              style={{ padding: '18px', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '1.1rem', backgroundColor: '#f8fafc', outline: 'none', transition: 'border 0.3s' }} 
+              onFocus={(e) => e.target.style.borderColor = '#333'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              required 
+            />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              value={passwordInput} 
+              onChange={e => setPasswordInput(e.target.value)} 
+              style={{ padding: '18px', borderRadius: '12px', border: '2px solid #e2e8f0', fontSize: '1.1rem', backgroundColor: '#f8fafc', outline: 'none', transition: 'border 0.3s' }} 
+              onFocus={(e) => e.target.style.borderColor = '#333'}
+              onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+              required 
+            />
+            
+            {loginError && (
+              <div style={{ color: '#ef4444', backgroundColor: '#fef2f2', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem', border: '1px solid #fecaca' }}>
+                {loginError}
+              </div>
+            )}
+            
+            <button type="submit" style={{ padding: '18px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '12px', fontSize: '1.2rem', fontWeight: '800', cursor: 'pointer', marginTop: '10px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', transition: 'transform 0.1s' }} onMouseDown={e => e.target.style.transform = 'scale(0.98)'} onMouseUp={e => e.target.style.transform = 'scale(1)'}>
+              Secure Login ➔
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 6. RENDER ADMIN DASHBOARD (Agar Auth True hai)
+  // ==========================================
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f6f8', fontFamily: 'system-ui, sans-serif' }}>
       <style>{adminStyles}</style>
       
-      {/* HEADER WITH 3 TABS */}
-      <div style={{ backgroundColor: '#333', padding: '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+      {/* HEADER WITH TABS & LOGOUT BUTTON */}
+      <div style={{ backgroundColor: '#333', padding: '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', flexWrap: 'wrap', gap: '15px' }}>
         <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '1px' }}>RE:FILL Admin</h1>
-        <div style={{ display: 'flex', gap: '15px' }}>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => setActiveTab('ORDERS')} style={{ padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', border: 'none', backgroundColor: activeTab === 'ORDERS' ? '#ffcc00' : '#555', color: activeTab === 'ORDERS' ? '#333' : 'white', transition: '0.3s', display: 'flex', alignItems: 'center', gap: '10px' }}>🔔 Orders <span style={{ backgroundColor: '#dc3545', color: 'white', padding: '2px 8px', borderRadius: '15px', fontSize: '0.9rem' }}>{liveOrders.length}</span></button>
           <button onClick={() => setActiveTab('MENU')} style={{ padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', border: 'none', backgroundColor: activeTab === 'MENU' ? '#ffcc00' : '#555', color: activeTab === 'MENU' ? '#333' : 'white', transition: '0.3s' }}>📦 Menu Mgt</button>
           <button onClick={() => setActiveTab('STOCK')} style={{ padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', border: 'none', backgroundColor: activeTab === 'STOCK' ? '#ffcc00' : '#555', color: activeTab === 'STOCK' ? '#333' : 'white', transition: '0.3s' }}>📊 Stock Mgt</button>
+          
+          {/* NAYA: LOGOUT BUTTON */}
+          <button onClick={handleLogout} style={{ padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', border: '2px solid #ef4444', backgroundColor: 'transparent', color: '#ef4444', transition: '0.3s', marginLeft: '10px' }}>
+            Logout 🚪
+          </button>
         </div>
       </div>
 
@@ -200,7 +230,6 @@ const AdminPage = () => {
       {activeTab === 'STOCK' && (
         <div className="admin-wrapper">
           <h2 style={{ fontSize: '2.2rem', margin: '0 0 30px 0', color: '#333' }}>📊 Quick Stock Management</h2>
-          
           <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 5px 20px rgba(0,0,0,0.05)' }}>
             {categories.map(cat => {
               const catProducts = products.filter(p => p.category === cat.name);
@@ -211,8 +240,6 @@ const AdminPage = () => {
                   <h3 style={{ borderBottom: '3px solid #f1f5f9', paddingBottom: '10px', color: '#475569', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src={cat.image} alt="cat" style={{width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover'}}/> {cat.name}
                   </h3>
-                  
-                  {/* NAYA CSS CLASS YAHAN USE KIYA HAI */}
                   <div className="auto-grid" style={{ marginTop: '20px' }}>
                     {catProducts.map(p => (
                       <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: p.isAvailable === false ? '#fff1f2' : '#f8fafc', transition: '0.2s' }}>
@@ -239,7 +266,6 @@ const AdminPage = () => {
       {/* TAB 2: MENU MANAGEMENT */}
       {activeTab === 'MENU' && (
         <div style={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
-          {/* Menu Form */}
           <div style={{ flex: 1.2, padding: '40px', backgroundColor: 'white', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
             <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px dashed #eee' }}>
               <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📁 {editingCatId ? "Edit Category" : "Manage Categories"}</h3>
