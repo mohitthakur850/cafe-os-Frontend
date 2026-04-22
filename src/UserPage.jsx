@@ -7,12 +7,14 @@ const uiStyles = `
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes pulseHeart { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
   @keyframes slowZoom { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  @keyframes shakeError { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
   
   .idle-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; animation: slowZoom 20s ease-in-out infinite; z-index: -2; }
   .idle-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.85)); z-index: -1; }
   
   .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
   .pop-in { animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .shake-animation { animation: shakeError 0.4s ease-in-out; }
   .animated-grid { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
   .product-card { transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
   .product-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important; }
@@ -41,6 +43,9 @@ const UserPage = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedAddons, setSelectedAddons] = useState([]);
+
+  // 👇 NAYA: Custom Error Message State 👇
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -76,7 +81,6 @@ const UserPage = () => {
       } catch(e) { console.error("Error loading data", e); } finally { setIsLoading(false); }
     };
     loadData();
-    // Kiosk page bhi har thodi der mein refresh hona chahiye taaki stock update turant dikhe
     const interval = setInterval(loadData, 10000); 
     return () => clearInterval(interval);
   }, []);
@@ -84,17 +88,27 @@ const UserPage = () => {
   const totalAmount = cart.reduce((sum, item) => sum + (item.itemTotal * item.quantity), 0);
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const handleRestart = () => { setActiveScreen('IDLE'); setCart([]); setCustomerName(''); setIsCartOpen(false); setPlacedOrderId(null); };
+  const handleRestart = () => { setActiveScreen('IDLE'); setCart([]); setCustomerName(''); setIsCartOpen(false); setPlacedOrderId(null); setErrorMessage(''); };
 
   const handlePlaceOrder = async () => {
-    if (cart.length === 0) return alert("Cart is empty!");
-    if (!customerName) return alert("Please enter your name!");
+    // 👇 FIX: Default alert hata kar custom error set kiya 👇
+    if (cart.length === 0) {
+      setErrorMessage("Your tray is empty! Please add some items to place an order. 🛒");
+      return;
+    }
+    if (!customerName.trim()) {
+      setErrorMessage("Please enter your Name before confirming the order! 👤");
+      return;
+    }
+
     const newOrder = { customer_name: customerName, items: cart, total: totalAmount };
     try {
       const res = await axios.post('https://cafe-os-backend.onrender.com/orders', newOrder);
       setPlacedOrderId(res.data.id); setIsCartOpen(false); setActiveScreen('SUCCESS');
       setTimeout(() => { handleRestart(); }, 6000);
-    } catch (error) { alert("Error placing order"); }
+    } catch (error) { 
+      setErrorMessage("Network issue! Couldn't place your order. Please try again."); 
+    }
   };
 
   const openAddonModal = (product) => { setSelectedProduct(product); setSelectedAddons([]); };
@@ -175,6 +189,20 @@ const UserPage = () => {
     <div style={{ backgroundColor: '#f9f9f9', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <style>{uiStyles}</style>
 
+      {/* --- CUSTOM ERROR POPUP MODAL --- */}
+      {errorMessage && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div className="shake-animation" style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize: '4rem', marginBottom: '15px' }}>⚠️</div>
+            <h2 style={{ color: '#222', fontSize: '2rem', margin: '0 0 15px 0' }}>Oops!</h2>
+            <p style={{ color: '#555', fontSize: '1.3rem', lineHeight: '1.5', margin: '0 0 30px 0' }}>{errorMessage}</p>
+            <button onClick={() => setErrorMessage('')} style={{ padding: '15px 40px', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '50px', fontSize: '1.3rem', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 5px 15px rgba(239, 68, 68, 0.3)' }}>
+              Okay, Got it!
+            </button>
+          </div>
+        </div>
+      )}
+
       {activeScreen === 'HOME' && (
         <div className="animated-grid" style={{ padding: '50px', boxSizing: 'border-box', height: '100%', overflowY: 'auto', paddingBottom: cart.length > 0 ? '120px' : '50px' }}>
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
@@ -229,12 +257,12 @@ const UserPage = () => {
                 {displayProducts.length === 0 ? (<p style={{ color: '#888', fontSize: '1.2rem', marginTop: '20px', gridColumn: '1 / -1' }}>No items found in this category yet.</p>) : (
                   displayProducts.map(product => {
                     const qtyInCart = getProductTotalQty(product);
-                    const isAvailable = product.isAvailable !== false; // NAYA: Stock check
+                    const isAvailable = product.isAvailable !== false;
                     
                     return (
                       <div key={product._id || product.id} className="product-card" style={{ 
                         backgroundColor: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 6px 16px rgba(0,0,0,0.04)', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column',
-                        opacity: isAvailable ? 1 : 0.6, pointerEvents: isAvailable ? 'auto' : 'none', filter: isAvailable ? 'none' : 'grayscale(100%)' // SOLD OUT EFFECT
+                        opacity: isAvailable ? 1 : 0.6, pointerEvents: isAvailable ? 'auto' : 'none', filter: isAvailable ? 'none' : 'grayscale(100%)' 
                       }}>
                         <img src={product.image || "https://via.placeholder.com/150"} alt={product.name} style={{ width: '100%', height: '170px', objectFit: 'cover', borderRadius: '16px' }} />
                         <h3 style={{ margin: '15px 0 5px 0', color: '#222', fontSize: '1.2rem' }}>{product.name}</h3>
@@ -243,7 +271,6 @@ const UserPage = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
                           <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 0}</span>
                           
-                          {/* NAYA: Agar out of stock hai toh Sold Out badge dikhao */}
                           {!isAvailable ? (
                             <span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1rem', backgroundColor: '#fee2e2', padding: '8px 15px', borderRadius: '20px', textTransform: 'uppercase' }}>Sold Out 🚫</span>
                           ) : qtyInCart === 0 ? (
@@ -266,7 +293,6 @@ const UserPage = () => {
         </div>
       )}
 
-      {/* OVERLAYS & CART (Same as before) */}
       {selectedProduct && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
           <div style={{ width: '500px', backgroundColor: 'white', borderTopLeftRadius: '35px', borderTopRightRadius: '35px', padding: '40px', boxSizing: 'border-box', animation: 'slideUpFade 0.3s forwards' }}>
