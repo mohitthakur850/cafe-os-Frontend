@@ -179,13 +179,22 @@ const AdminPage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
               {filteredOrders.map((order, idx) => (
                 <div key={order._id || idx} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '25px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', borderTop: '5px solid #ffcc00', display: 'flex', flexDirection: 'column' }}>
+                  
+                  {/* ================= NAYA ORDER ID SECTION ================= */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#333' }}>{order.customer_name}</h3>
-                      <span style={{ color: '#888', fontSize: '0.9rem' }}>{formatDate(order.createdAt)}</span>
+                      <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '4px 10px', borderRadius: '8px', fontSize: '1.2rem', fontWeight: '900' }}>
+                          #{order.id}
+                        </span>
+                        {order.customer_name}
+                      </h3>
+                      <span style={{ color: '#888', fontSize: '0.9rem', display: 'block', marginTop: '5px' }}>{formatDate(order.createdAt)}</span>
                     </div>
                     <h2 style={{ margin: 0, color: '#28a745' }}>₹{order.total}</h2>
                   </div>
+                  {/* ========================================================= */}
+
                   <div style={{ flex: 1, marginBottom: '20px' }}>
                     {order.items && order.items.map((item, i) => (
                       <div key={i} style={{ marginBottom: '10px', backgroundColor: '#f9f9f9', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -194,7 +203,9 @@ const AdminPage = () => {
                       </div>
                     ))}
                   </div>
-                  <button style={{ width: '100%', padding: '15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(40,167,69,0.3)', cursor: 'default' }}>Completed ✅</button>
+                  <button style={{ width: '100%', padding: '15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(40,167,69,0.3)', cursor: 'default' }}>
+                    Completed ✅
+                  </button>
                 </div>
               ))}
             </div>
