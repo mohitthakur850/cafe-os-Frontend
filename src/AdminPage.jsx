@@ -8,8 +8,12 @@ const AdminPage = () => {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [categories, setCategories] = useState([]);
+  
+  // Edit Trackers
   const [editingId, setEditingId] = useState(null);
+  const [editingCatId, setEditingCatId] = useState(null); // NAYA: Category edit track karne ke liye
 
+  // Product Form States
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
@@ -18,6 +22,7 @@ const AdminPage = () => {
   const [price, setPrice] = useState('');
   const [addons, setAddons] = useState([{ name: '', price: '' }]);
 
+  // Category Form States
   const [newCatName, setNewCatName] = useState('');
   const [newCatImg, setNewCatImg] = useState('');
 
@@ -38,6 +43,50 @@ const AdminPage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // --- NAYA: FILE UPLOAD TO BASE64 LOGIC ---
+  const handleImageUpload = (e, setImageState) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2000000) { // 2MB se badi file par warning
+        alert("File size should be less than 2MB for better performance.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageState(reader.result); // Base64 link save hoga
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // --- CATEGORY ACTIONS ---
+  const handleEditCategoryClick = (c) => {
+    setEditingCatId(c._id);
+    setNewCatName(c.name);
+    setNewCatImg(c.image);
+    window.scrollTo(0, 0);
+  };
+
+  const handleSaveCategory = async () => {
+    if(!newCatName) return;
+    try {
+      if (editingCatId) {
+        await axios.put(`https://cafe-os-backend.onrender.com/categories/${editingCatId}`, { name: newCatName, image: newCatImg });
+        alert("Category Updated! ✅");
+      } else {
+        await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg });
+        alert("Category Added! ➕");
+      }
+      setEditingCatId(null); setNewCatName(''); setNewCatImg('');
+      fetchData();
+    } catch (error) { alert("Error saving category. It might already exist."); }
+  };
+
+  const cancelCategoryEdit = () => {
+    setEditingCatId(null); setNewCatName(''); setNewCatImg('');
+  };
+
+  // --- PRODUCT ACTIONS ---
   const handleAddonChange = (index, field, value) => {
     const newAddons = [...addons];
     newAddons[index][field] = value;
@@ -56,13 +105,7 @@ const AdminPage = () => {
 
   const handleSaveProduct = async (e) => {
     e.preventDefault();
-    // FIX: "price === '' ? 150 : Number(price)" lagaya hai taaki 0 save ho sake
-    const data = { 
-      name, category, subCategory, description, image, 
-      price: price === '' ? 150 : Number(price), 
-      addons: addons.filter(a => a.name) 
-    };
-    
+    const data = { name, category, subCategory, description, image, price: price === '' ? 150 : Number(price), addons: addons.filter(a => a.name) };
     try {
       if (editingId) {
         await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data);
@@ -83,13 +126,7 @@ const AdminPage = () => {
     }
   };
 
-  const handleAddCategory = async () => {
-    if(!newCatName) return;
-    await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg });
-    setNewCatName(''); setNewCatImg('');
-    fetchData();
-  };
-
+  // --- ORDERS FILTERING ---
   const getFilteredOrders = () => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -168,27 +205,47 @@ const AdminPage = () => {
       {/* TAB 2: MENU MANAGEMENT */}
       {activeTab === 'MENU' && (
         <div style={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
+          
           <div style={{ flex: 1.2, padding: '40px', backgroundColor: 'white', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
             
-            {/* Category Manager */}
+            {/* 📁 CATEGORY MANAGER */}
             <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px dashed #eee' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📁 Manage Categories</h3>
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <input placeholder="New Category Name" value={newCatName} onChange={e => setNewCatName(e.target.value)} style={inputStyle} />
-                <input placeholder="Image URL" value={newCatImg} onChange={e => setNewCatImg(e.target.value)} style={inputStyle} />
-                <button onClick={handleAddCategory} style={btnStyle}>Add</button>
+              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>
+                📁 {editingCatId ? "Edit Category" : "Manage Categories"}
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px' }}>
+                <input placeholder="Category Name" value={newCatName} onChange={e => setNewCatName(e.target.value)} style={inputStyle} />
+                
+                {/* NAYA: Image URL OR File Upload for Category */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input placeholder="Image URL" value={newCatImg} onChange={e => setNewCatImg(e.target.value)} style={{...inputStyle, marginBottom: 0, flex: 1}} />
+                  <span style={{fontWeight: 'bold', color: '#888'}}>OR</span>
+                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setNewCatImg)} style={{flex: 1, padding: '10px', fontSize: '0.8rem'}} />
+                </div>
+                {newCatImg && <img src={newCatImg} alt="Preview" style={{height: '60px', width: '100px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ccc'}} />}
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                  <button onClick={handleSaveCategory} style={{...btnStyle, flex: 1, backgroundColor: editingCatId ? '#0ea5e9' : '#333'}}>
+                    {editingCatId ? "Update Category" : "Add Category"}
+                  </button>
+                  {editingCatId && <button onClick={cancelCategoryEdit} style={{...btnStyle, flex: 1, backgroundColor: '#888'}}>Cancel</button>}
+                </div>
               </div>
+
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {categories.map(c => (
-                  <div key={c._id} style={{ padding: '5px 15px', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {c.name} <button onClick={async () => { await axios.delete(`https://cafe-os-backend.onrender.com/categories/${c._id}`); fetchData(); }} style={{ border: 'none', color: 'red', background: 'none', cursor: 'pointer', fontSize: '1rem' }}>×</button>
+                  <div key={c._id} style={{ padding: '5px 5px 5px 15px', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {c.name} 
+                    <button onClick={() => handleEditCategoryClick(c)} style={{ border: 'none', color: '#0ea5e9', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>✎ Edit</button>
+                    <button onClick={async () => { await axios.delete(`https://cafe-os-backend.onrender.com/categories/${c._id}`); fetchData(); }} style={{ border: 'none', color: 'red', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 8px' }}>×</button>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Product Form */}
-            <h2 style={{ margin: '0 0 20px 0', color: '#333' }}>{editingId ? "📝 Edit Item" : "➕ Add New Menu Item"}</h2>
+            {/* ➕ PRODUCT FORM */}
+            <h2 style={{ margin: '0 0 20px 0', color: '#333' }}>{editingId ? "📝 Edit Menu Item" : "➕ Add New Menu Item"}</h2>
             <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div><label style={labelStyle}>Item Name *</label><input required value={name} onChange={e => setName(e.target.value)} style={inputStyle} /></div>
@@ -202,9 +259,29 @@ const AdminPage = () => {
                 <div><label style={labelStyle}>Price (₹) *</label><input required type="number" value={price} onChange={e => setPrice(e.target.value)} style={inputStyle} /></div>
                 <div><label style={labelStyle}>Sub Category</label><input value={subCategory} onChange={e => setSubCategory(e.target.value)} style={inputStyle} /></div>
               </div>
-              <div><label style={labelStyle}>Image URL</label><input value={image} onChange={e => setImage(e.target.value)} style={inputStyle} /></div>
+
+              {/* NAYA: Image URL OR File Upload for Product */}
+              <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
+                <label style={labelStyle}>Item Image</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <div style={{ flex: 1 }}>
+                    <input placeholder="Paste Image URL" value={image} onChange={e => setImage(e.target.value)} style={{...inputStyle, marginBottom: '10px'}} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{fontWeight: 'bold', color: '#888'}}>OR</span>
+                      <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setImage)} style={{flex: 1, padding: '5px', fontSize: '0.9rem'}} />
+                    </div>
+                  </div>
+                  {image ? (
+                    <img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #ccc' }} />
+                  ) : (
+                    <div style={{ width: '80px', height: '80px', backgroundColor: '#eaeaea', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>No Image</div>
+                  )}
+                </div>
+              </div>
+
               <div><label style={labelStyle}>Description</label><textarea rows="2" value={description} onChange={e => setDescription(e.target.value)} style={inputStyle} /></div>
 
+              {/* ADD-ONS SECTION */}
               <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <label style={labelStyle}>Add-ons (Optional)</label>
@@ -226,15 +303,15 @@ const AdminPage = () => {
             </form>
           </div>
 
+          {/* 📦 LIVE MENU LIST */}
           <div style={{ flex: 1.8, padding: '40px', overflowY: 'auto' }}>
             <h2 style={{ margin: '0 0 30px 0', color: '#333' }}>📦 Live Menu Items ({products.length})</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {products.map(p => (
                 <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <img src={p.image || 'https://via.placeholder.com/50'} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+                    <img src={p.image || 'https://via.placeholder.com/50'} alt="Item" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                     <div>
-                      {/* FIX: p.price !== undefined use kiya gaya hai 0 dikhane ke liye */}
                       <h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 150}</span></h4>
                       <div style={{ fontSize: '0.85rem', color: '#888' }}><strong>{p.category}</strong> {p.subCategory && `> ${p.subCategory}`}</div>
                     </div>
@@ -247,6 +324,7 @@ const AdminPage = () => {
               ))}
             </div>
           </div>
+
         </div>
       )}
     </div>
@@ -254,7 +332,7 @@ const AdminPage = () => {
 };
 
 const inputStyle = { width: '100%', padding: '12px', border: '1px solid #ccc', borderRadius: '8px', boxSizing: 'border-box', fontSize: '1rem', marginBottom: '10px' };
-const btnStyle = { padding: '10px 20px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' };
+const btnStyle = { padding: '10px 20px', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' };
 const labelStyle = { fontWeight: 'bold', display: 'block', marginBottom: '5px', fontSize: '0.9rem', color: '#555' };
 
 export default AdminPage;
