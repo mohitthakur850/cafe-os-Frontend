@@ -1,6 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+// --- NAYA: RESPONSIVE CSS STYLES ---
+const adminStyles = `
+  .admin-wrapper {
+    padding: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  @media (min-width: 768px) {
+    .admin-wrapper { padding: 30px 40px; }
+  }
+  @media (min-width: 1200px) {
+    .admin-wrapper { padding: 40px 60px; }
+  }
+  
+  /* Yeh jadoo karega - Screen ke hisaab se columns adjust honge */
+  .auto-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  @media (min-width: 1440px) {
+    .auto-grid {
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 25px;
+    }
+  }
+`;
+
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('ORDERS'); 
   const [orderFilter, setOrderFilter] = useState('Today'); 
@@ -40,7 +69,6 @@ const AdminPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // --- STOCK TOGGLE LOGIC ---
   const toggleStock = async (product) => {
     try {
       const newStatus = product.isAvailable === false ? true : false;
@@ -138,6 +166,7 @@ const AdminPage = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f6f8', fontFamily: 'system-ui, sans-serif' }}>
+      <style>{adminStyles}</style>
       
       {/* HEADER WITH 3 TABS */}
       <div style={{ backgroundColor: '#333', padding: '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
@@ -151,8 +180,7 @@ const AdminPage = () => {
 
       {/* TAB 1: ORDER HISTORY */}
       {activeTab === 'ORDERS' && (
-        <div style={{ padding: '40px' }}>
-          {/* ... (Pichla Orders wala code same) ... */}
+        <div className="admin-wrapper">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
             <h2 style={{ fontSize: '2.2rem', margin: 0, color: '#333' }}>Order History & Analytics</h2>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
@@ -163,15 +191,14 @@ const AdminPage = () => {
               <select value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)} style={{ padding: '12px 20px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}><option value="Today">Today</option><option value="Yesterday">Yesterday</option><option value="All Time">All Time</option></select>
             </div>
           </div>
-          {liveOrders.length > 0 && (<div style={{ marginBottom: '50px' }}><h2 style={{ color: '#0ea5e9', marginBottom: '20px', borderBottom: '2px solid #e0f2fe', paddingBottom: '10px' }}>🔥 Live Kitchen Orders ({liveOrders.length})</h2><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>{liveOrders.map(order => renderOrderCard(order, true))}</div></div>)}
-          <div><h2 style={{ color: '#22c55e', marginBottom: '20px', borderBottom: '2px solid #dcfce7', paddingBottom: '10px' }}>✅ Past Order History ({completedHistory.length})</h2>{completedHistory.length === 0 ? (<p style={{ color: '#888', fontSize: '1.2rem' }}>No completed orders found.</p>) : (<div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>{completedHistory.map(order => renderOrderCard(order, false))}</div>)}</div>
+          {liveOrders.length > 0 && (<div style={{ marginBottom: '50px' }}><h2 style={{ color: '#0ea5e9', marginBottom: '20px', borderBottom: '2px solid #e0f2fe', paddingBottom: '10px' }}>🔥 Live Kitchen Orders ({liveOrders.length})</h2><div className="auto-grid">{liveOrders.map(order => renderOrderCard(order, true))}</div></div>)}
+          <div><h2 style={{ color: '#22c55e', marginBottom: '20px', borderBottom: '2px solid #dcfce7', paddingBottom: '10px' }}>✅ Past Order History ({completedHistory.length})</h2>{completedHistory.length === 0 ? (<p style={{ color: '#888', fontSize: '1.2rem' }}>No completed orders found.</p>) : (<div className="auto-grid">{completedHistory.map(order => renderOrderCard(order, false))}</div>)}</div>
         </div>
       )}
 
-     {/* TAB 3: NEW STOCK MANAGEMENT */}
+      {/* TAB 3: STOCK MANAGEMENT */}
       {activeTab === 'STOCK' && (
-        // FIX 1: maxWidth '1200px' se badha kar '1600px' (ya '95%') kar diya hai taaki extra space cover ho jaye
-        <div style={{ padding: '40px', maxWidth: '1600px', width: '95%', margin: '0 auto' }}>
+        <div className="admin-wrapper">
           <h2 style={{ fontSize: '2.2rem', margin: '0 0 30px 0', color: '#333' }}>📊 Quick Stock Management</h2>
           
           <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '40px', boxShadow: '0 5px 20px rgba(0,0,0,0.05)' }}>
@@ -185,18 +212,18 @@ const AdminPage = () => {
                     <img src={cat.image} alt="cat" style={{width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover'}}/> {cat.name}
                   </h3>
                   
-                  {/* FIX 2: minmax(350px) ko 300px kiya hai taaki ek line mein 3-4 items aaram se fit ho jayein */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', marginTop: '20px' }}>
+                  {/* NAYA CSS CLASS YAHAN USE KIYA HAI */}
+                  <div className="auto-grid" style={{ marginTop: '20px' }}>
                     {catProducts.map(p => (
-                      <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: p.isAvailable === false ? '#fff1f2' : '#f8fafc', transition: '0.2s' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <img src={p.image || 'https://via.placeholder.com/50'} alt="item" style={{ width: '45px', height: '45px', borderRadius: '10px', objectFit: 'cover', filter: p.isAvailable === false ? 'grayscale(100%) opacity(60%)' : 'none' }} />
-                          <div>
-                            <div style={{ fontWeight: 'bold', color: p.isAvailable === false ? '#94a3b8' : '#1e293b', fontSize: '1.05rem', lineHeight: '1.2' }}>{p.name}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '2px' }}>₹{p.price !== undefined ? p.price : 0}</div>
+                      <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: p.isAvailable === false ? '#fff1f2' : '#f8fafc', transition: '0.2s' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}>
+                          <img src={p.image || 'https://via.placeholder.com/50'} alt="item" style={{ width: '50px', height: '50px', borderRadius: '10px', objectFit: 'cover', filter: p.isAvailable === false ? 'grayscale(100%) opacity(60%)' : 'none', flexShrink: 0 }} />
+                          <div style={{ overflow: 'hidden' }}>
+                            <div style={{ fontWeight: 'bold', color: p.isAvailable === false ? '#94a3b8' : '#1e293b', fontSize: '1.1rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>₹{p.price !== undefined ? p.price : 0}</div>
                           </div>
                         </div>
-                        <button onClick={() => toggleStock(p)} style={{ backgroundColor: p.isAvailable === false ? '#fecdd3' : '#bbf7d0', color: p.isAvailable === false ? '#e11d48' : '#16a34a', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', transition: '0.2s', whiteSpace: 'nowrap', marginLeft: '10px' }}>
+                        <button onClick={() => toggleStock(p)} style={{ backgroundColor: p.isAvailable === false ? '#fecdd3' : '#bbf7d0', color: p.isAvailable === false ? '#e11d48' : '#16a34a', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', transition: '0.2s', flexShrink: 0, marginLeft: '10px' }}>
                           {p.isAvailable === false ? 'Out 🚫' : 'In Stock ✅'}
                         </button>
                       </div>
@@ -209,10 +236,10 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* TAB 2: MENU MANAGEMENT (Purana Form Yahan Hai) */}
+      {/* TAB 2: MENU MANAGEMENT */}
       {activeTab === 'MENU' && (
         <div style={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
-          {/* Menu Form Wala Code (Same as Before) */}
+          {/* Menu Form */}
           <div style={{ flex: 1.2, padding: '40px', backgroundColor: 'white', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
             <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px dashed #eee' }}>
               <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>📁 {editingCatId ? "Edit Category" : "Manage Categories"}</h3>
