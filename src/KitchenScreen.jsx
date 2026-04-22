@@ -25,14 +25,15 @@ const KitchenScreen = () => {
     }
   };
 
-  const handleCompleteOrder = async (id) => {
-    try {
-      await axios.delete(`https://cafe-os-backend.onrender.com/orders/${id}`);
-      fetchOrders(); 
-    } catch (error) {
-      alert('Error completing order');
-    }
-  };
+ const handleCompleteOrder = async (id) => {
+  try {
+    // FIX: Delete ki jagah ab status 'Completed' set karenge
+    await axios.put(`https://cafe-os-backend.onrender.com/orders/${id}/status?status=Completed`);
+    fetchOrders(); 
+  } catch (error) {
+    alert('Error completing order');
+  }
+};
 
   const activeOrders = orders.filter(o => o.status === 'Accepted' || o.status === 'Preparing' || o.status === 'Ready');
 
