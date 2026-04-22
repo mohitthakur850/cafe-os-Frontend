@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// --- EMBEDDED CSS ANIMATIONS (Updated with Screensaver Zoom) ---
+// --- EMBEDDED CSS ANIMATIONS ---
 const uiStyles = `
   @keyframes slideUpFade { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
   @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -120,12 +120,17 @@ const UserPage = () => {
     else { setSelectedAddons([...selectedAddons, addon]); }
   };
 
+  // 🐛 FIX 1: Add to Cart logic now strictly checks true MongoDB _id or Product Name
   const confirmAddToCart = () => {
-    const basePrice = selectedProduct.price !== undefined ? selectedProduct.price : 150; 
+    const basePrice = selectedProduct.price !== undefined ? selectedProduct.price : 0; 
     const addonsTotal = selectedAddons.reduce((sum, a) => sum + a.price, 0);
     
     const existingIndex = cart.findIndex(item => {
-      if (item._id !== selectedProduct._id && item.id !== selectedProduct.id) return false;
+      // Name comparison is 100% safe here to prevent collision
+      const isSameProduct = (item._id && selectedProduct._id && item._id === selectedProduct._id) || (item.name === selectedProduct.name);
+      
+      if (!isSameProduct) return false;
+      
       if (item.addons.length !== selectedAddons.length) return false;
       const existingStr = item.addons.map(a => a.name).sort().join(',');
       const newStr = selectedAddons.map(a => a.name).sort().join(',');
@@ -154,12 +159,15 @@ const UserPage = () => {
     if (updatedCart.length === 0) setIsCartOpen(false); 
   };
 
-  const getProductTotalQty = (productId) => {
-    return cart.filter(item => item._id === productId || item.id === productId).reduce((sum, item) => sum + item.quantity, 0);
+  // 🐛 FIX 2: Check quantity safely using name/_id instead of bugged old id
+  const getProductTotalQty = (product) => {
+    return cart.filter(item => (item._id && item._id === product._id) || item.name === product.name)
+               .reduce((sum, item) => sum + item.quantity, 0);
   };
 
-  const handleMinusFromMenu = (productId) => {
-    const index = [...cart].reverse().findIndex(item => item._id === productId || item.id === productId);
+  // 🐛 FIX 3: Remove from menu safely
+  const handleMinusFromMenu = (product) => {
+    const index = [...cart].reverse().findIndex(item => (item._id && item._id === product._id) || item.name === product.name);
     if (index !== -1) {
       const actualIndex = cart.length - 1 - index;
       updateQuantity(cart[actualIndex].cartId, -1);
@@ -173,38 +181,20 @@ const UserPage = () => {
   const currentCategoryData = dynamicCategories.find(c => c.main === activeCategory);
 
   // ==========================================
-  // 1. SCREEN: TOUCH TO START (Naya Premium Design)
+  // 1. SCREEN: TOUCH TO START
   // ==========================================
   if (activeScreen === 'IDLE') {
     return (
       <div onClick={() => setActiveScreen('HOME')} style={{ height: '100vh', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', overflow: 'hidden' }}>
         <style>{uiStyles}</style>
-        
-        {/* Screensaver Background & Overlay */}
-        <img 
-          src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop" 
-          alt="Cafe Background" 
-          className="idle-bg" 
-        />
+        <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop" alt="Cafe Background" className="idle-bg" />
         <div className="idle-overlay"></div>
 
-        {/* Premium Typography Content */}
         <h1 className="fade-in" style={{ fontSize: '7rem', margin: '0 0 20px 0', letterSpacing: '2px', color: 'white', fontWeight: '900', textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
           RE:FILL <span style={{ color: '#ffcc00' }}>CAFE</span>
         </h1>
         
-        <p style={{ 
-          fontSize: '2.2rem', 
-          animation: 'pulseHeart 2s infinite', 
-          fontWeight: 'bold', 
-          color: '#222', 
-          backgroundColor: '#ffcc00', 
-          padding: '18px 45px', 
-          borderRadius: '50px', 
-          boxShadow: '0 10px 25px rgba(255, 204, 0, 0.4)',
-          textTransform: 'uppercase',
-          letterSpacing: '1px'
-        }}>
+        <p style={{ fontSize: '2.2rem', animation: 'pulseHeart 2s infinite', fontWeight: 'bold', color: '#222', backgroundColor: '#ffcc00', padding: '18px 45px', borderRadius: '50px', boxShadow: '0 10px 25px rgba(255, 204, 0, 0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>
           👆 Touch Anywhere to Start
         </p>
       </div>
@@ -219,7 +209,6 @@ const UserPage = () => {
       <div style={{ height: '100vh', backgroundColor: '#f0fdfa', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
         <style>{uiStyles}</style>
         <div className="pop-in" style={{ maxWidth: '800px', width: '100%' }}>
-          
           <div style={{ fontSize: '7rem', marginBottom: '20px', animation: 'pulseHeart 2s infinite' }}>✅</div>
           <h1 style={{ fontSize: '4.5rem', margin: '0 0 10px 0', color: '#16a34a', fontWeight: '900', letterSpacing: '-1px' }}>Order Placed!</h1>
           <p style={{ fontSize: '2.2rem', color: '#4b5563', margin: '0 0 40px 0' }}>Thank you, <span style={{ color: '#1f2937', fontWeight: '800' }}>{customerName}</span></p>
@@ -233,7 +222,6 @@ const UserPage = () => {
             <span style={{ fontSize: '3rem' }}>👨‍🍳</span>
             <span style={{ fontSize: '1.8rem', color: '#c2410c', fontWeight: 'bold' }}>Our chefs are pouring love into your food right now...</span>
           </div>
-
         </div>
       </div>
     );
@@ -327,7 +315,8 @@ const UserPage = () => {
                   <p style={{ color: '#888', fontSize: '1.2rem', marginTop: '20px', gridColumn: '1 / -1' }}>No items found in this category yet.</p>
                 ) : (
                   displayProducts.map(product => {
-                    const qtyInCart = getProductTotalQty(product._id || product.id);
+                    // FIX: Pass the whole product object to safely check name
+                    const qtyInCart = getProductTotalQty(product);
                     
                     return (
                       <div key={product._id || product.id} className="product-card" style={{ backgroundColor: 'white', borderRadius: '24px', padding: '15px', boxShadow: '0 6px 16px rgba(0,0,0,0.04)', border: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}>
@@ -338,7 +327,7 @@ const UserPage = () => {
                         </p>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
-                          <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 150}</span>
+                          <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 0}</span>
                           
                           {qtyInCart === 0 ? (
                             <button onClick={() => openAddonModal(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>
@@ -346,7 +335,7 @@ const UserPage = () => {
                             </button>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#eefaf2', borderRadius: '30px', padding: '5px 8px', border: '2px solid #28a745' }}>
-                              <button onClick={() => handleMinusFromMenu(product._id || product.id)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
+                              <button onClick={() => handleMinusFromMenu(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
                               <span style={{ margin: '0 12px', fontWeight: '900', fontSize: '1.1rem', color: '#1e7e34' }}>{qtyInCart}</span>
                               <button onClick={() => openAddonModal(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>+</button>
                             </div>
@@ -391,7 +380,7 @@ const UserPage = () => {
             </div>
             <button onClick={confirmAddToCart} className="product-card" style={{ width: '100%', padding: '22px', backgroundColor: '#ffcc00', color: '#222', border: 'none', borderRadius: '20px', fontSize: '1.3rem', cursor: 'pointer', fontWeight: '900', display: 'flex', justifyContent: 'space-between', paddingLeft: '30px', paddingRight: '30px' }}>
               <span>Add to Tray</span>
-              <span>₹{(selectedProduct.price !== undefined ? selectedProduct.price : 150) + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
+              <span>₹{(selectedProduct.price !== undefined ? selectedProduct.price : 0) + selectedAddons.reduce((sum, a) => sum + a.price, 0)}</span>
             </button>
           </div>
         </div>
