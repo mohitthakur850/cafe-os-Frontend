@@ -11,7 +11,7 @@ const AdminPage = () => {
   
   // Edit Trackers
   const [editingId, setEditingId] = useState(null);
-  const [editingCatId, setEditingCatId] = useState(null); // NAYA: Category edit track karne ke liye
+  const [editingCatId, setEditingCatId] = useState(null); 
 
   // Product Form States
   const [name, setName] = useState('');
@@ -33,27 +33,31 @@ const AdminPage = () => {
         axios.get('https://cafe-os-backend.onrender.com/orders'),
         axios.get('https://cafe-os-backend.onrender.com/categories')
       ]);
-      setProducts(pRes.data); setOrders(oRes.data); setCategories(cRes.data);
-    } catch (e) { console.error("Error fetching data", e); }
+      setProducts(pRes.data); 
+      setOrders(oRes.data); 
+      setCategories(cRes.data);
+    } catch (e) { 
+      console.error("Error fetching data", e); 
+    }
   };
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => fetchData(), 10000); 
+    const interval = setInterval(() => fetchData(), 5000); // Har 5 second mein auto-update
     return () => clearInterval(interval);
   }, []);
 
-  // --- NAYA: FILE UPLOAD TO BASE64 LOGIC ---
+  // --- FILE UPLOAD TO BASE64 LOGIC ---
   const handleImageUpload = (e, setImageState) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2000000) { // 2MB se badi file par warning
+      if (file.size > 2000000) { 
         alert("File size should be less than 2MB for better performance.");
         return;
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageState(reader.result); // Base64 link save hoga
+        setImageState(reader.result); 
       };
       reader.readAsDataURL(file);
     }
@@ -63,7 +67,7 @@ const AdminPage = () => {
   const handleEditCategoryClick = (c) => {
     setEditingCatId(c._id);
     setNewCatName(c.name);
-    setNewCatImg(c.image);
+    setNewCatImg(c.image || '');
     window.scrollTo(0, 0);
   };
 
@@ -79,7 +83,9 @@ const AdminPage = () => {
       }
       setEditingCatId(null); setNewCatName(''); setNewCatImg('');
       fetchData();
-    } catch (error) { alert("Error saving category. It might already exist."); }
+    } catch (error) { 
+      alert("Error saving category. It might already exist."); 
+    }
   };
 
   const cancelCategoryEdit = () => {
@@ -97,15 +103,19 @@ const AdminPage = () => {
 
   const handleEditClick = (p) => {
     setEditingId(p._id);
-    setName(p.name); setCategory(p.category); setSubCategory(p.subCategory);
-    setDescription(p.description); setImage(p.image); setPrice(p.price);
+    setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || '');
+    setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price);
     setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]);
     window.scrollTo(0, 0); 
   };
 
   const handleSaveProduct = async (e) => {
     e.preventDefault();
-    const data = { name, category, subCategory, description, image, price: price === '' ? 150 : Number(price), addons: addons.filter(a => a.name) };
+    const data = { 
+      name, category, subCategory, description, image, 
+      price: price === '' ? 0 : Number(price), 
+      addons: addons.filter(a => a.name) 
+    };
     try {
       if (editingId) {
         await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data);
@@ -116,7 +126,9 @@ const AdminPage = () => {
       }
       setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]);
       fetchData();
-    } catch (error) { alert('Error saving product'); }
+    } catch (error) { 
+      alert('Error saving product'); 
+    }
   };
 
   const handleDeleteProduct = async (id) => {
@@ -126,7 +138,7 @@ const AdminPage = () => {
     }
   };
 
-  // --- ORDERS FILTERING ---
+  // --- ORDERS FILTERING & SPLIT ---
   const getFilteredOrders = () => {
     const today = new Date();
     const yesterday = new Date(today);
@@ -139,9 +151,50 @@ const AdminPage = () => {
     });
   };
 
-  const filteredOrders = getFilteredOrders();
-  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+  const allFilteredOrders = getFilteredOrders();
+  
+  // FIX: Orders ko Live aur Completed mein baant diya gaya hai
+  const liveOrders = allFilteredOrders.filter(o => o.status !== 'Completed');
+  const completedHistory = allFilteredOrders.filter(o => o.status === 'Completed');
+
+  const totalRevenue = completedHistory.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
   const formatDate = (dateString) => new Date(dateString || Date.now()).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  // Reusable Order Card Component
+  const renderOrderCard = (order, isLive) => (
+    <div key={order._id || order.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '25px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', borderTop: `5px solid ${isLive ? '#0ea5e9' : '#22c55e'}`, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '4px 10px', borderRadius: '8px', fontSize: '1.2rem', fontWeight: '900' }}>
+              #{order.id}
+            </span>
+            {order.customer_name}
+          </h3>
+          <span style={{ color: '#888', fontSize: '0.9rem', display: 'block', marginTop: '5px' }}>{formatDate(order.createdAt)}</span>
+        </div>
+        <h2 style={{ margin: 0, color: '#28a745' }}>₹{order.total}</h2>
+      </div>
+      <div style={{ flex: 1, marginBottom: '20px' }}>
+        {order.items && order.items.map((item, i) => (
+          <div key={i} style={{ marginBottom: '10px', backgroundColor: '#f9f9f9', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: 'bold', color: '#333' }}>{item.quantity}x {item.name}</span>
+              {item.addons && item.addons.length > 0 && (
+                <div style={{ color: '#888', fontSize: '0.85rem', marginTop: '4px' }}>
+                  + {item.addons.map(a => a.name).join(', ')}
+                </div>
+              )}
+            </div>
+            <span style={{ fontWeight: 'bold', color: '#555' }}>₹{(Number(item.itemTotal) * Number(item.quantity)) || 0}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ width: '100%', padding: '15px', backgroundColor: isLive ? '#eff6ff' : '#f0fdf4', color: isLive ? '#1d4ed8' : '#15803d', border: `1px solid ${isLive ? '#bfdbfe' : '#bbf7d0'}`, borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center' }}>
+        {isLive ? `⏳ Active in Kitchen (${order.status})` : '✅ Order Completed'}
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f6f8', fontFamily: 'system-ui, sans-serif' }}>
@@ -151,7 +204,7 @@ const AdminPage = () => {
         <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '1px' }}>RE:FILL Admin</h1>
         <div style={{ display: 'flex', gap: '15px' }}>
           <button onClick={() => setActiveTab('ORDERS')} style={{ padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', border: 'none', backgroundColor: activeTab === 'ORDERS' ? '#ffcc00' : '#555', color: activeTab === 'ORDERS' ? '#333' : 'white', transition: '0.3s', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            🔔 Order History <span style={{ backgroundColor: '#dc3545', color: 'white', padding: '2px 8px', borderRadius: '15px', fontSize: '0.9rem' }}>{filteredOrders.length}</span>
+            🔔 Order History <span style={{ backgroundColor: '#dc3545', color: 'white', padding: '2px 8px', borderRadius: '15px', fontSize: '0.9rem' }}>{liveOrders.length}</span>
           </button>
           <button onClick={() => setActiveTab('MENU')} style={{ padding: '12px 25px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', border: 'none', backgroundColor: activeTab === 'MENU' ? '#ffcc00' : '#555', color: activeTab === 'MENU' ? '#333' : 'white', transition: '0.3s' }}>📦 Menu Management</button>
         </div>
@@ -164,7 +217,7 @@ const AdminPage = () => {
             <h2 style={{ fontSize: '2.2rem', margin: 0, color: '#333' }}>Order History & Analytics</h2>
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
               <div style={{ backgroundColor: 'white', padding: '10px 20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', gap: '20px' }}>
-                <div><span style={{color: '#888'}}>Orders:</span> <strong style={{color: '#333', fontSize: '1.2rem'}}>{filteredOrders.length}</strong></div>
+                <div><span style={{color: '#888'}}>Completed Orders:</span> <strong style={{color: '#333', fontSize: '1.2rem'}}>{completedHistory.length}</strong></div>
                 <div><span style={{color: '#888'}}>Revenue:</span> <strong style={{color: '#28a745', fontSize: '1.2rem'}}>₹{totalRevenue}</strong></div>
               </div>
               <select value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)} style={{ padding: '12px 20px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
@@ -173,43 +226,28 @@ const AdminPage = () => {
             </div>
           </div>
           
-          {filteredOrders.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px', color: '#888' }}><h2>No orders found for {orderFilter}.</h2></div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
-              {filteredOrders.map((order, idx) => (
-                <div key={order._id || idx} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '25px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', borderTop: '5px solid #ffcc00', display: 'flex', flexDirection: 'column' }}>
-                  
-                  {/* ================= NAYA ORDER ID SECTION ================= */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '4px 10px', borderRadius: '8px', fontSize: '1.2rem', fontWeight: '900' }}>
-                          #{order.id}
-                        </span>
-                        {order.customer_name}
-                      </h3>
-                      <span style={{ color: '#888', fontSize: '0.9rem', display: 'block', marginTop: '5px' }}>{formatDate(order.createdAt)}</span>
-                    </div>
-                    <h2 style={{ margin: 0, color: '#28a745' }}>₹{order.total}</h2>
-                  </div>
-                  {/* ========================================================= */}
-
-                  <div style={{ flex: 1, marginBottom: '20px' }}>
-                    {order.items && order.items.map((item, i) => (
-                      <div key={i} style={{ marginBottom: '10px', backgroundColor: '#f9f9f9', padding: '12px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 'bold', color: '#333' }}>{item.quantity}x {item.name}</span>
-                        <span style={{ fontWeight: 'bold', color: '#555' }}>₹{(Number(item.itemTotal) * Number(item.quantity)) || 0}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <button style={{ width: '100%', padding: '15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(40,167,69,0.3)', cursor: 'default' }}>
-                    Completed ✅
-                  </button>
-                </div>
-              ))}
+          {/* LIVE KITCHEN ORDERS SECTION */}
+          {liveOrders.length > 0 && (
+            <div style={{ marginBottom: '50px' }}>
+              <h2 style={{ color: '#0ea5e9', marginBottom: '20px', borderBottom: '2px solid #e0f2fe', paddingBottom: '10px' }}>🔥 Live Kitchen Orders ({liveOrders.length})</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
+                {liveOrders.map(order => renderOrderCard(order, true))}
+              </div>
             </div>
           )}
+
+          {/* COMPLETED HISTORY SECTION */}
+          <div>
+            <h2 style={{ color: '#22c55e', marginBottom: '20px', borderBottom: '2px solid #dcfce7', paddingBottom: '10px' }}>✅ Past Order History ({completedHistory.length})</h2>
+            {completedHistory.length === 0 ? (
+              <p style={{ color: '#888', fontSize: '1.2rem' }}>No completed orders found for {orderFilter}.</p>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '25px' }}>
+                {completedHistory.map(order => renderOrderCard(order, false))}
+              </div>
+            )}
+          </div>
+
         </div>
       )}
 
@@ -228,7 +266,6 @@ const AdminPage = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px' }}>
                 <input placeholder="Category Name" value={newCatName} onChange={e => setNewCatName(e.target.value)} style={inputStyle} />
                 
-                {/* NAYA: Image URL OR File Upload for Category */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <input placeholder="Image URL" value={newCatImg} onChange={e => setNewCatImg(e.target.value)} style={{...inputStyle, marginBottom: 0, flex: 1}} />
                   <span style={{fontWeight: 'bold', color: '#888'}}>OR</span>
@@ -271,7 +308,6 @@ const AdminPage = () => {
                 <div><label style={labelStyle}>Sub Category</label><input value={subCategory} onChange={e => setSubCategory(e.target.value)} style={inputStyle} /></div>
               </div>
 
-              {/* NAYA: Image URL OR File Upload for Product */}
               <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
                 <label style={labelStyle}>Item Image</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -296,7 +332,7 @@ const AdminPage = () => {
               <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <label style={labelStyle}>Add-ons (Optional)</label>
-                  <button type="button" onClick={addAddonRow} style={{...btnStyle, padding: '5px 10px', fontSize: '0.8rem'}}>+ Add Row</button>
+                  <button type="button" onClick={addAddonRow} style={{...btnStyle, padding: '5px 10px', fontSize: '0.8rem', backgroundColor: '#333'}}>+ Add Row</button>
                 </div>
                 {addons.map((addon, index) => (
                   <div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
@@ -323,7 +359,7 @@ const AdminPage = () => {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <img src={p.image || 'https://via.placeholder.com/50'} alt="Item" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                     <div>
-                      <h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 150}</span></h4>
+                      <h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 0}</span></h4>
                       <div style={{ fontSize: '0.85rem', color: '#888' }}><strong>{p.category}</strong> {p.subCategory && `> ${p.subCategory}`}</div>
                     </div>
                   </div>
