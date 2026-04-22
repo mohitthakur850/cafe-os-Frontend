@@ -48,18 +48,25 @@ const AdminPage = () => {
 
   // ==========================================
   // 🔐 3. LOGIN LOGIC (NAYA)
-  // ==========================================
-  const handleLogin = (e) => {
-    e.preventDefault();
-    // Yahan hum strict check kar rahe hain (Case Sensitive)
-    if (usernameInput === 'Root' && passwordInput === 'Admin123') {
+const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post('https://cafe-os-backend.onrender.com/admin/login', {
+      username: usernameInput,
+      password: passwordInput
+    });
+
+    if (res.data.success) {
       setIsAuthenticated(true);
       setLoginError('');
-    } else {
-      setLoginError('Invalid Username or Password! 🚫');
-      setPasswordInput(''); // Galat hone par password box khali kar do
+      // Optional: LocalStorage mein save kar sakte hain taaki refresh pe login na mangey
+      localStorage.setItem('isAdmin', 'true');
     }
-  };
+  } catch (error) {
+    setLoginError('Invalid Username or Password! 🚫');
+    setPasswordInput('');
+  }
+};
 
   const handleLogout = () => {
     setIsAuthenticated(false);
