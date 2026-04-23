@@ -48,25 +48,26 @@ const AdminPage = () => {
 
   // ==========================================
   // 🔐 3. LOGIN LOGIC (NAYA)
-const handleLogin = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await axios.post('https://cafe-os-backend-production.up.railway.app//admin/login', {
-      username: usernameInput,
-      password: passwordInput
-    });
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      // FIX: //admin ko hatakar /admin kar diya
+      const res = await axios.post('https://cafe-os-backend-production.up.railway.app/admin/login', {
+        username: usernameInput,
+        password: passwordInput
+      });
 
-    if (res.data.success) {
-      setIsAuthenticated(true);
-      setLoginError('');
-      // Optional: LocalStorage mein save kar sakte hain taaki refresh pe login na mangey
-      localStorage.setItem('isAdmin', 'true');
+      if (res.data.success) {
+        setIsAuthenticated(true);
+        setLoginError('');
+        // Optional: LocalStorage mein save kar sakte hain taaki refresh pe login na mangey
+        localStorage.setItem('isAdmin', 'true');
+      }
+    } catch (error) {
+      setLoginError('Invalid Username or Password! 🚫');
+      setPasswordInput('');
     }
-  } catch (error) {
-    setLoginError('Invalid Username or Password! 🚫');
-    setPasswordInput('');
-  }
-};
+  };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
@@ -82,10 +83,11 @@ const handleLogin = async (e) => {
     if (!isAuthenticated) return; 
     
     try {
+      // FIX: Yahan 3on render URLs chhut gaye the, theek kar diye!
       const [pRes, oRes, cRes] = await Promise.all([
-        axios.get('https://cafe-os-backend.onrender.com/products'),
-        axios.get('https://cafe-os-backend.onrender.com/orders'),
-        axios.get('https://cafe-os-backend.onrender.com/categories')
+        axios.get('https://cafe-os-backend-production.up.railway.app/products'),
+        axios.get('https://cafe-os-backend-production.up.railway.app/orders'),
+        axios.get('https://cafe-os-backend-production.up.railway.app/categories')
       ]);
       setProducts(pRes.data); setOrders(oRes.data); setCategories(cRes.data);
     } catch (e) { console.error("Error fetching data", e); }
@@ -102,13 +104,34 @@ const handleLogin = async (e) => {
   const handleImageUpload = (e, setImageState) => { const file = e.target.files[0]; if (file) { if (file.size > 2000000) return alert("File size should be less than 2MB."); const reader = new FileReader(); reader.onloadend = () => setImageState(reader.result); reader.readAsDataURL(file); } };
   const handleEditCategoryClick = (c) => { setEditingCatId(c._id); setNewCatName(c.name); setNewCatImg(c.image || ''); window.scrollTo(0, 0); };
   const cancelCategoryEdit = () => { setEditingCatId(null); setNewCatName(''); setNewCatImg(''); };
-  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch (error) { alert("Error saving category."); } };
+  
+  // FIX: axios.post mein onrender chhut gaya tha
+  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch (error) { alert("Error saving category."); } };
+  
   const handleAddonChange = (index, field, value) => { const newAddons = [...addons]; newAddons[index][field] = value; setAddons(newAddons); };
   const addAddonRow = () => setAddons([...addons, { name: '', price: '' }]);
   const removeAddonRow = (index) => setAddons(addons.filter((_, i) => i !== index));
   const handleEditClick = (p) => { setEditingId(p._id); setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || ''); setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price); setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); window.scrollTo(0, 0); };
-  const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend.onrender.com/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch (error) { alert('Error saving product'); } };
+  
+  // FIX: Dono axios calls (put aur post) mein onrender tha
+  const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch (error) { alert('Error saving product'); } };
+  
   const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend-production.up.railway.app/products/${id}`); fetchData(); } };
+
+  // Status Change wala function (Optimistic UI Update ke saath)
+  const updateOrderStatus = async (orderId, newStatus) => {
+    // UI Update fast karne ke liye
+    setOrders(prevOrders => prevOrders.map(order => 
+      (order.id === orderId || order._id === orderId) ? { ...order, status: newStatus } : order
+    ));
+  
+    try {
+      await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${orderId}/status?status=${newStatus}`);
+    } catch (error) {
+      console.error('Error updating status');
+      fetchData(); 
+    }
+  };
 
   const getFilteredOrders = () => { const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1); return orders.filter(order => { const orderDate = new Date(order.createdAt || Date.now()); if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); return true; }); };
   const allFilteredOrders = getFilteredOrders();
@@ -134,9 +157,20 @@ const handleLogin = async (e) => {
           </div>
         ))}
       </div>
-      <div style={{ width: '100%', padding: '15px', backgroundColor: isLive ? '#eff6ff' : '#f0fdf4', color: isLive ? '#1d4ed8' : '#15803d', border: `1px solid ${isLive ? '#bfdbfe' : '#bbf7d0'}`, borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center' }}>
-        {isLive ? `⏳ Active in Kitchen (${order.status})` : '✅ Order Completed'}
-      </div>
+      
+      {isLive ? (
+        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+           {order.status === 'Preparing' ? (
+             <button onClick={() => updateOrderStatus(order._id || order.id, 'Ready')} style={{ flex: 1, padding: '12px', backgroundColor: '#0ea5e9', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Mark as Ready</button>
+           ) : (
+             <button onClick={() => updateOrderStatus(order._id || order.id, 'Completed')} style={{ flex: 1, padding: '12px', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Hand Over</button>
+           )}
+        </div>
+      ) : (
+        <div style={{ width: '100%', padding: '15px', backgroundColor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center' }}>
+          ✅ Order Completed
+        </div>
+      )}
     </div>
   );
 
@@ -282,7 +316,8 @@ const handleLogin = async (e) => {
                 {newCatImg && <img src={newCatImg} alt="Preview" style={{height: '60px', width: '100px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ccc'}} />}
                 <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}><button onClick={handleSaveCategory} style={{...btnStyle, flex: 1, backgroundColor: editingCatId ? '#0ea5e9' : '#333'}}>{editingCatId ? "Update Category" : "Add Category"}</button>{editingCatId && <button onClick={cancelCategoryEdit} style={{...btnStyle, flex: 1, backgroundColor: '#888'}}>Cancel</button>}</div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>{categories.map(c => (<div key={c._id} style={{ padding: '5px 5px 5px 15px', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>{c.name} <button onClick={() => handleEditCategoryClick(c)} style={{ border: 'none', color: '#0ea5e9', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>✎ Edit</button><button onClick={async () => { await axios.delete(`https://cafe-os-backend.onrender.com/categories/${c._id}`); fetchData(); }} style={{ border: 'none', color: 'red', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 8px' }}>×</button></div>))}</div>
+              {/* FIX: inline delete button mein onrender tha */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>{categories.map(c => (<div key={c._id} style={{ padding: '5px 5px 5px 15px', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>{c.name} <button onClick={() => handleEditCategoryClick(c)} style={{ border: 'none', color: '#0ea5e9', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>✎ Edit</button><button onClick={async () => { await axios.delete(`https://cafe-os-backend-production.up.railway.app/categories/${c._id}`); fetchData(); }} style={{ border: 'none', color: 'red', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 8px' }}>×</button></div>))}</div>
             </div>
             <h2 style={{ margin: '0 0 20px 0', color: '#333' }}>{editingId ? "📝 Edit Menu Item" : "➕ Add New Menu Item"}</h2>
             <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
