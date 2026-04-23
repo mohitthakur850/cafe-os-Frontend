@@ -44,15 +44,15 @@ const UserPage = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedAddons, setSelectedAddons] = useState([]);
 
-  // 👇 NAYA: Custom Error Message State 👇
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        // 👇 FIX: Yahan dono links ko Railway wale se replace kar diya hai 👇
         const [productRes, catRes] = await Promise.all([
-          axios.get('https://cafe-os-backend.onrender.com/products'),
-          axios.get('https://cafe-os-backend.onrender.com/categories')
+          axios.get('https://cafe-os-backend-production.up.railway.app/products'),
+          axios.get('https://cafe-os-backend-production.up.railway.app/categories')
         ]);
         
         setProducts(productRes.data);
@@ -91,7 +91,6 @@ const UserPage = () => {
   const handleRestart = () => { setActiveScreen('IDLE'); setCart([]); setCustomerName(''); setIsCartOpen(false); setPlacedOrderId(null); setErrorMessage(''); };
 
   const handlePlaceOrder = async () => {
-    // 👇 FIX: Default alert hata kar custom error set kiya 👇
     if (cart.length === 0) {
       setErrorMessage("Your tray is empty! Please add some items to place an order. 🛒");
       return;
@@ -103,6 +102,7 @@ const UserPage = () => {
 
     const newOrder = { customer_name: customerName, items: cart, total: totalAmount };
     try {
+      // (Yeh aapne sahi kar diya tha)
       const res = await axios.post('https://cafe-os-backend-production.up.railway.app/orders', newOrder);
       setPlacedOrderId(res.data.id); setIsCartOpen(false); setActiveScreen('SUCCESS');
       setTimeout(() => { handleRestart(); }, 6000);
