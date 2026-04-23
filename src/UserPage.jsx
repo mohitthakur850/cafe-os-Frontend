@@ -103,7 +103,7 @@ const UserPage = () => {
 
     const newOrder = { customer_name: customerName, items: cart, total: totalAmount };
     try {
-      const res = await axios.post('https://cafe-os-backend.onrender.com/orders', newOrder);
+      const res = await axios.post('https://cafe-os-backend-production.up.railway.app/orders', newOrder);
       setPlacedOrderId(res.data.id); setIsCartOpen(false); setActiveScreen('SUCCESS');
       setTimeout(() => { handleRestart(); }, 6000);
     } catch (error) { 
