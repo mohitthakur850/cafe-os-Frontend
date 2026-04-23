@@ -9,12 +9,11 @@ import DisplayScreen from './DisplayScreen';
 function App() {
   return (
     <BrowserRouter>
-      {/* Hidden Nav for easy testing on local computer */}
-      <div style={{ position: 'fixed', bottom: 5, right: 5, zIndex: 9999, opacity: 0.3 }}>
-        <Link to="/" style={linkStyle}>Kiosk</Link> | 
-        <Link to="/display" style={linkStyle}>Kitchen</Link> | 
-        <Link to="/admin" style={linkStyle}>Admin</Link>
-      </div>
+     <div style={{ textAlign: 'center', padding: '10px' }}>
+  <Link to="/">Kiosk</Link> | 
+  <Link to="/kitchen">Kitchen</Link> | 
+  <Link to="/admin">Admin</Link>
+</div>
 
       <Routes>
         <Route path="/" element={<UserPage />} />
