@@ -51,7 +51,7 @@ const AdminPage = () => {
 const handleLogin = async (e) => {
   e.preventDefault();
   try {
-    const res = await axios.post('https://cafe-os-backend.onrender.com/admin/login', {
+    const res = await axios.post('https://cafe-os-backend-production.up.railway.app//admin/login', {
       username: usernameInput,
       password: passwordInput
     });
@@ -98,17 +98,17 @@ const handleLogin = async (e) => {
   }, [isAuthenticated]); // Jab login ho jaye, tabhi interval chalu ho
 
   // ... (Baaki saare function same rahenge)
-  const toggleStock = async (product) => { try { await axios.put(`https://cafe-os-backend.onrender.com/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch (error) { alert('Error updating stock'); } };
+  const toggleStock = async (product) => { try { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch (error) { alert('Error updating stock'); } };
   const handleImageUpload = (e, setImageState) => { const file = e.target.files[0]; if (file) { if (file.size > 2000000) return alert("File size should be less than 2MB."); const reader = new FileReader(); reader.onloadend = () => setImageState(reader.result); reader.readAsDataURL(file); } };
   const handleEditCategoryClick = (c) => { setEditingCatId(c._id); setNewCatName(c.name); setNewCatImg(c.image || ''); window.scrollTo(0, 0); };
   const cancelCategoryEdit = () => { setEditingCatId(null); setNewCatName(''); setNewCatImg(''); };
-  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend.onrender.com/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch (error) { alert("Error saving category."); } };
+  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend.onrender.com/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch (error) { alert("Error saving category."); } };
   const handleAddonChange = (index, field, value) => { const newAddons = [...addons]; newAddons[index][field] = value; setAddons(newAddons); };
   const addAddonRow = () => setAddons([...addons, { name: '', price: '' }]);
   const removeAddonRow = (index) => setAddons(addons.filter((_, i) => i !== index));
   const handleEditClick = (p) => { setEditingId(p._id); setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || ''); setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price); setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); window.scrollTo(0, 0); };
   const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend.onrender.com/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend.onrender.com/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch (error) { alert('Error saving product'); } };
-  const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend.onrender.com/products/${id}`); fetchData(); } };
+  const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend-production.up.railway.app/products/${id}`); fetchData(); } };
 
   const getFilteredOrders = () => { const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1); return orders.filter(order => { const orderDate = new Date(order.createdAt || Date.now()); if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); return true; }); };
   const allFilteredOrders = getFilteredOrders();
