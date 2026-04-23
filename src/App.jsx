@@ -9,12 +9,6 @@ import DisplayScreen from './DisplayScreen';
 function App() {
   return (
     <BrowserRouter>
-     <div style={{ textAlign: 'center', padding: '10px' }}>
-  <Link to="/">Kiosk</Link> | 
-  <Link to="/kitchen">Kitchen</Link> | 
-  <Link to="/admin">Admin</Link>
-</div>
-
       <Routes>
         <Route path="/" element={<UserPage />} />
         <Route path="/admin" element={<AdminPage />} />
