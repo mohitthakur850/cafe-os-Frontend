@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './DisplayScreen.css'; 
 
-const API_URL = 'https://cafe-os-backend.onrender.com';
-const WS_URL = 'wss://cafe-os-backend.onrender.com';
+// 👇 FIX: Dono links Render se Railway par update kar diye gaye hain 👇
+const API_URL = 'https://cafe-os-backend-production.up.railway.app';
+const WS_URL = 'wss://cafe-os-backend-production.up.railway.app';
 
 export default function DisplayScreen() {
   const [orders, setOrders] = useState([]);
