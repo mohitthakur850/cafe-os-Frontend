@@ -5,7 +5,8 @@ const KitchenScreen = () => {
   const [orders, setOrders] = useState([]);
 
   const fetchOrders = () => {
-    axios.get('https://cafe-os-backend.onrender.com/orders')
+    // 👇 FIX: Link updated to Railway
+    axios.get('https://cafe-os-backend-production.up.railway.app/orders')
       .then(res => setOrders(res.data))
       .catch(err => console.error("Error fetching orders", err));
   };
@@ -17,21 +18,32 @@ const KitchenScreen = () => {
   }, []);
 
   const updateOrderStatus = async (id, newStatus) => {
+    // 🚀 OPTIMISTIC UPDATE: Kitchen display instant update hoga bina server ka wait kiye!
+    setOrders(prevOrders => prevOrders.map(order => 
+      (order.id === id || order._id === id) ? { ...order, status: newStatus } : order
+    ));
+
     try {
-      await axios.put(`https://cafe-os-backend.onrender.com/orders/${id}/status?status=${newStatus}`);
-      fetchOrders(); 
+      // 👇 FIX: Link updated to Railway
+      await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=${newStatus}`);
     } catch (error) {
       alert('Error updating status');
+      fetchOrders(); // Agar net chala jaye toh wapas purana data laao
     }
   };
 
  const handleCompleteOrder = async (id) => {
+  // 🚀 OPTIMISTIC UPDATE
+  setOrders(prevOrders => prevOrders.map(order => 
+    (order.id === id || order._id === id) ? { ...order, status: 'Completed' } : order
+  ));
+
   try {
-    // FIX: Delete ki jagah ab status 'Completed' set karenge
-    await axios.put(`https://cafe-os-backend.onrender.com/orders/${id}/status?status=Completed`);
-    fetchOrders(); 
+    // 👇 FIX: Link updated to Railway
+    await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=Completed`);
   } catch (error) {
     alert('Error completing order');
+    fetchOrders();
   }
 };
 
