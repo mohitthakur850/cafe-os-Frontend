@@ -73,7 +73,7 @@ const UserPage = () => {
     if (cart.length === 0) return setErrorMessage("Your tray is empty! Please add some items. 🛒");
     if (!customerName.trim()) return setErrorMessage("Please enter your Name before confirming! 👤");
 
-    const newOrder = { customer_name: customerName, items: cart, total: totalAmount, status: 'Accepted' }; // Status is Accepted
+    const newOrder = { customer_name: customerName, items: cart, total: totalAmount, status: 'Accepted' }; 
     try {
       const res = await axios.post('https://cafe-os-backend-production.up.railway.app/orders', newOrder);
       setPlacedOrderId(res.data.id); setIsCartOpen(false); setActiveScreen('SUCCESS');
@@ -81,7 +81,30 @@ const UserPage = () => {
     } catch (error) { setErrorMessage("Network issue! Couldn't place your order."); }
   };
 
-  const openAddonModal = (product) => { setSelectedProduct(product); setSelectedAddons([]); };
+  // 👇 NAYA SMART LOGIC: Addons hain toh popup kholo, nahi toh direct add karo 👇
+  const handleAddToCartClick = (product) => {
+    if (product.addons && product.addons.length > 0) {
+      setSelectedProduct(product);
+      setSelectedAddons([]);
+    } else {
+      const basePrice = product.price !== undefined ? product.price : 0;
+      const existingIndex = cart.findIndex(item => {
+        const isSameProduct = (item._id && product._id && item._id === product._id) || (item.name === product.name);
+        if (!isSameProduct) return false;
+        if (item.addons && item.addons.length > 0) return false;
+        return true;
+      });
+
+      if (existingIndex >= 0) {
+        const newCart = [...cart]; 
+        newCart[existingIndex].quantity += 1; 
+        setCart(newCart);
+      } else {
+        setCart([...cart, { ...product, cartId: Date.now(), addons: [], itemTotal: basePrice, quantity: 1 }]);
+      }
+    }
+  };
+
   const toggleAddon = (addon) => { if (selectedAddons.includes(addon)) setSelectedAddons(selectedAddons.filter(a => a.name !== addon.name)); else setSelectedAddons([...selectedAddons, addon]); };
 
   const confirmAddToCart = () => {
@@ -187,7 +210,17 @@ const UserPage = () => {
                         <p style={{ margin: '0 0 auto 0', color: '#777', fontSize: '0.9rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description || "Freshly prepared."}</p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
                           <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 0}</span>
-                          {!isAvailable ? (<span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1rem', backgroundColor: '#fee2e2', padding: '8px 15px', borderRadius: '20px', textTransform: 'uppercase' }}>Sold Out 🚫</span>) : qtyInCart === 0 ? (<button onClick={() => openAddonModal(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>+ ADD</button>) : (<div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#eefaf2', borderRadius: '30px', padding: '5px 8px', border: '2px solid #28a745' }}><button onClick={() => handleMinusFromMenu(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button><span style={{ margin: '0 12px', fontWeight: '900', fontSize: '1.1rem', color: '#1e7e34' }}>{qtyInCart}</span><button onClick={() => openAddonModal(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>+</button></div>)}
+                          {!isAvailable ? (<span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1rem', backgroundColor: '#fee2e2', padding: '8px 15px', borderRadius: '20px', textTransform: 'uppercase' }}>Sold Out 🚫</span>) : qtyInCart === 0 ? (
+                            // 👇 NAYA ADD BUTTON LOGIC 👇
+                            <button onClick={() => handleAddToCartClick(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>+ ADD</button>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#eefaf2', borderRadius: '30px', padding: '5px 8px', border: '2px solid #28a745' }}>
+                              <button onClick={() => handleMinusFromMenu(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
+                              <span style={{ margin: '0 12px', fontWeight: '900', fontSize: '1.1rem', color: '#1e7e34' }}>{qtyInCart}</span>
+                              {/* 👇 NAYA PLUS BUTTON LOGIC 👇 */}
+                              <button onClick={() => handleAddToCartClick(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>+</button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
