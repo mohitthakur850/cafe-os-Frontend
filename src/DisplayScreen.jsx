@@ -2,41 +2,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import './DisplayScreen.css'; 
 
 const API_URL = 'https://cafe-os-backend-production.up.railway.app';
-const WS_URL = 'wss://cafe-os-backend-production.up.railway.app';
 
 export default function DisplayScreen() {
   const [orders, setOrders] = useState([]);
-  
-  // 👇 NAYA: Loading state add kar di 👇
   const [isLoading, setIsLoading] = useState(true);
   
   const prepRef = useRef(null);
   const collRef = useRef(null);
 
   useEffect(() => {
-    // Pehli baar data load karte waqt loading band karenge
-    fetch(`${API_URL}/orders`)
-      .then(res => res.json())
-      .then(data => {
-        setOrders(data);
-        setIsLoading(false); // Data aate hi loading band
-      })
-      .catch(err => {
-        console.error(err);
-        setIsLoading(false);
-      });
-
-    const socket = new WebSocket(WS_URL);
-    socket.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if(msg.type === "STATUS_UPDATE" || msg.type === "NEW_ORDER" || msg.type === "ORDER_DELETED") {
-         // Background update bina loading screen dikhaye
-         fetch(`${API_URL}/orders`).then(res => res.json()).then(setOrders);
-      }
+    // 👇 NAYA: Ek function banaya jo orders fetch karega
+    const loadOrders = () => {
+      fetch(`${API_URL}/orders`)
+        .then(res => res.json())
+        .then(data => {
+          setOrders(data);
+          setIsLoading(false); 
+        })
+        .catch(err => {
+          console.error(err);
+          setIsLoading(false);
+        });
     };
-    return () => socket.close();
+
+    // Pehli baar turant fetch karo
+    loadOrders();
+
+    // 👇 NAYA: Har 3 second baad naye orders fetch karta rahega (LIVE UPDATE)
+    const dataInterval = setInterval(loadOrders, 3000);
+
+    return () => clearInterval(dataInterval);
   }, []);
 
+  // Auto-scroll wala hissa (Purana wala hi hai)
   useEffect(() => {
     const autoScroll = (ref) => {
       if (ref.current) {
@@ -60,7 +58,6 @@ export default function DisplayScreen() {
   return (
     <div className="display-container">
       
-      {/* 👇 NAYA: TV Screen Loading Overlay 👇 */}
       {isLoading && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#1e272e', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
            <div style={{ width: '80px', height: '80px', border: '8px solid #2d3436', borderTopColor: '#00b894', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
