@@ -17,6 +17,9 @@ const AdminPage = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
 
+  // 👇 NAYA: Loading State 👇
+  const [isLoading, setIsLoading] = useState(true); 
+
   const [activeTab, setActiveTab] = useState('ORDERS'); 
   const [orderFilter, setOrderFilter] = useState('Today'); 
   const [products, setProducts] = useState([]);
@@ -31,7 +34,7 @@ const AdminPage = () => {
     e.preventDefault();
     try {
       const res = await axios.post('https://cafe-os-backend-production.up.railway.app/admin/login', { username: usernameInput, password: passwordInput });
-      if (res.data.success) { setIsAuthenticated(true); setLoginError(''); localStorage.setItem('isAdmin', 'true'); }
+      if (res.data.success) { setIsAuthenticated(true); setLoginError(''); localStorage.setItem('isAdmin', 'true'); setIsLoading(true); }
     } catch (error) { setLoginError('Invalid Username or Password! 🚫'); setPasswordInput(''); }
   };
   const handleLogout = () => { setIsAuthenticated(false); setUsernameInput(''); setPasswordInput(''); };
@@ -42,6 +45,7 @@ const AdminPage = () => {
       const [pRes, oRes, cRes] = await Promise.all([ axios.get('https://cafe-os-backend-production.up.railway.app/products'), axios.get('https://cafe-os-backend-production.up.railway.app/orders'), axios.get('https://cafe-os-backend-production.up.railway.app/categories') ]);
       setProducts(pRes.data); setOrders(oRes.data); setCategories(cRes.data);
     } catch (e) { console.error("Error fetching data", e); }
+    finally { setIsLoading(false); } // 👇 NAYA: Data aane ke baad loading band 👇
   };
 
   useEffect(() => { fetchData(); const interval = setInterval(() => fetchData(), 5000); return () => clearInterval(interval); }, [isAuthenticated]);
@@ -118,6 +122,16 @@ const AdminPage = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f6f8', fontFamily: 'system-ui, sans-serif' }}>
       <style>{adminStyles}</style>
+
+      {/* 👇 NAYA: Admin Dashboard Loading Screen 👇 */}
+      {isLoading && isAuthenticated && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#f4f6f8', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+           <div style={{ width: '60px', height: '60px', border: '6px solid #e2e8f0', borderTopColor: '#333', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+           <h2 style={{ color: '#333', marginTop: '20px', letterSpacing: '1px' }}>Loading Dashboard...</h2>
+        </div>
+      )}
+
       <div style={{ backgroundColor: '#333', padding: '15px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)', flexWrap: 'wrap', gap: '15px' }}>
         <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '1px' }}>RE:FILL Admin</h1>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
