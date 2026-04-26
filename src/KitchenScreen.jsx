@@ -3,11 +3,20 @@ import axios from 'axios';
 
 const KitchenScreen = () => {
   const [orders, setOrders] = useState([]);
+  
+  // 👇 NAYA: Loading state add kar di 👇
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchOrders = () => {
     axios.get('https://cafe-os-backend-production.up.railway.app/orders')
-      .then(res => setOrders(res.data))
-      .catch(err => console.error("Error fetching orders", err));
+      .then(res => {
+        setOrders(res.data);
+        setIsLoading(false); // Data aate hi loading band
+      })
+      .catch(err => {
+        console.error("Error fetching orders", err);
+        setIsLoading(false); // Agar error aaye toh bhi loading band kar do
+      });
   };
 
   useEffect(() => {
@@ -41,6 +50,15 @@ const KitchenScreen = () => {
   return (
     <div style={{ backgroundColor: '#f0fdfa', minHeight: '100vh', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
       
+      {/* 👇 NAYA: Full Screen Loading Overlay 👇 */}
+      {isLoading && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#f0fdfa', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+           <div style={{ width: '60px', height: '60px', border: '6px solid #cffafe', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+           <h2 style={{ color: '#333', marginTop: '20px', letterSpacing: '1px' }}>Loading Orders... 👨‍🍳</h2>
+        </div>
+      )}
+
       <div style={{ backgroundColor: 'white', padding: '15px 30px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <h1 style={{ margin: 0, color: '#333', fontSize: '1.8rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
           Kitchen Orders 👨‍🍳
@@ -50,7 +68,7 @@ const KitchenScreen = () => {
         </div>
       </div>
 
-      {activeOrders.length === 0 ? (
+      {!isLoading && activeOrders.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: '100px' }}>
           <h1 style={{ fontSize: '4rem', margin: 0 }}>🍽️</h1>
           <h2>No Active Orders</h2>
