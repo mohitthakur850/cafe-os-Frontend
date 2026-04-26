@@ -81,7 +81,6 @@ const UserPage = () => {
     } catch (error) { setErrorMessage("Network issue! Couldn't place your order."); }
   };
 
-  // 👇 NAYA SMART LOGIC: Addons hain toh popup kholo, nahi toh direct add karo 👇
   const handleAddToCartClick = (product) => {
     if (product.addons && product.addons.length > 0) {
       setSelectedProduct(product);
@@ -160,6 +159,16 @@ const UserPage = () => {
   return (
     <div style={{ backgroundColor: '#f9f9f9', height: '100vh', overflow: 'hidden', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <style>{uiStyles}</style>
+
+      {/* 👇 NAYA: FULL SCREEN LOADING OVERLAY 👇 */}
+      {isLoading && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(255,255,255,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', animation: 'fadeIn 0.3s' }}>
+          <div style={{ fontSize: '6rem', animation: 'pulseHeart 1.5s infinite' }}>☕</div>
+          <h2 style={{ color: '#333', fontSize: '2.5rem', marginTop: '20px', letterSpacing: '1px', fontWeight: '800' }}>Preparing Menu...</h2>
+          <p style={{ color: '#666', fontSize: '1.3rem', fontWeight: '500' }}>Please wait a moment</p>
+        </div>
+      )}
+
       {errorMessage && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div className="shake-animation" style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.2)' }}>
@@ -173,7 +182,8 @@ const UserPage = () => {
         <div className="animated-grid" style={{ padding: '50px', boxSizing: 'border-box', height: '100%', overflowY: 'auto', paddingBottom: cart.length > 0 ? '120px' : '50px' }}>
           <div style={{ textAlign: 'center', marginBottom: '50px' }}><h1 style={{ fontSize: '4rem', margin: 0, color: '#222', fontWeight: '800', letterSpacing: '-1px' }}>What are you craving?</h1><p style={{ fontSize: '1.5rem', color: '#666', marginTop: '10px' }}>Tap a category to start your order</p></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '30px', maxWidth: '1200px', margin: '0 auto' }}>
-            {isLoading ? (<h3 style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}>Loading Menu...</h3>) : dynamicCategories.length === 0 ? (<div style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}><h2>Menu is empty!</h2></div>) : (
+            {/* 👇 FIX: Purana text wala loader hata diya kyunki ab full screen loader hai 👇 */}
+            {!isLoading && dynamicCategories.length === 0 ? (<div style={{ textAlign: 'center', color: '#888', gridColumn: '1/-1' }}><h2>Menu is empty!</h2></div>) : (
               dynamicCategories.map(cat => (
                 <div key={cat.main} className="product-card" onClick={() => { setActiveCategory(cat.main); setActiveSubCategory('All'); setActiveScreen('MENU'); }} style={{ height: '200px', borderRadius: '24px', overflow: 'hidden', position: 'relative', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,0,0,0.06)' }}>
                   <img src={cat.image} alt={cat.main} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /><div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', padding: '20px', background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)', boxSizing: 'border-box' }}><h2 style={{ color: 'white', margin: 0, fontSize: '1.8rem', fontWeight: '700' }}>{cat.main}</h2></div>
@@ -211,13 +221,11 @@ const UserPage = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
                           <span style={{ fontWeight: '800', fontSize: '1.3rem', color: '#222' }}>₹{product.price !== undefined ? product.price : 0}</span>
                           {!isAvailable ? (<span style={{ color: '#ef4444', fontWeight: 'bold', fontSize: '1rem', backgroundColor: '#fee2e2', padding: '8px 15px', borderRadius: '20px', textTransform: 'uppercase' }}>Sold Out 🚫</span>) : qtyInCart === 0 ? (
-                            // 👇 NAYA ADD BUTTON LOGIC 👇
                             <button onClick={() => handleAddToCartClick(product)} style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '10px 22px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 10px rgba(40, 167, 69, 0.2)' }}>+ ADD</button>
                           ) : (
                             <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#eefaf2', borderRadius: '30px', padding: '5px 8px', border: '2px solid #28a745' }}>
                               <button onClick={() => handleMinusFromMenu(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>-</button>
                               <span style={{ margin: '0 12px', fontWeight: '900', fontSize: '1.1rem', color: '#1e7e34' }}>{qtyInCart}</span>
-                              {/* 👇 NAYA PLUS BUTTON LOGIC 👇 */}
                               <button onClick={() => handleAddToCartClick(product)} style={{ width: '30px', height: '30px', borderRadius: '50%', border: 'none', backgroundColor: '#28a745', color: 'white', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>+</button>
                             </div>
                           )}
