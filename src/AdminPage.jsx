@@ -1,15 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-
-const adminStyles = `
-  .admin-wrapper { padding: 20px; width: 100%; box-sizing: border-box; max-width: 100%; }
-  @media (min-width: 768px) { .admin-wrapper { padding: 30px 40px; } }
-  @media (min-width: 1200px) { .admin-wrapper { padding: 40px 60px; } }
-  .auto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-  @media (min-width: 1440px) { .auto-grid { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; } }
-  @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .login-card { animation: slideDown 0.4s ease-out forwards; }
-`;
+import './AdminPage.css'; // 👇 NAYA: Yahan CSS file import kar li
 
 const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -17,7 +8,6 @@ const AdminPage = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // 👇 NAYA: Loading State 👇
   const [isLoading, setIsLoading] = useState(true); 
 
   const [activeTab, setActiveTab] = useState('ORDERS'); 
@@ -35,39 +25,39 @@ const AdminPage = () => {
     try {
       const res = await axios.post('https://cafe-os-backend-production.up.railway.app/admin/login', { username: usernameInput, password: passwordInput });
       if (res.data.success) { setIsAuthenticated(true); setLoginError(''); localStorage.setItem('isAdmin', 'true'); setIsLoading(true); }
-    } catch (error) { setLoginError('Invalid Username or Password! 🚫'); setPasswordInput(''); }
+    } catch { setLoginError('Invalid Username or Password! 🚫'); setPasswordInput(''); }
   };
   const handleLogout = () => { setIsAuthenticated(false); setUsernameInput(''); setPasswordInput(''); };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!isAuthenticated) return; 
     try {
       const [pRes, oRes, cRes] = await Promise.all([ axios.get('https://cafe-os-backend-production.up.railway.app/products'), axios.get('https://cafe-os-backend-production.up.railway.app/orders'), axios.get('https://cafe-os-backend-production.up.railway.app/categories') ]);
       setProducts(pRes.data); setOrders(oRes.data); setCategories(cRes.data);
     } catch (e) { console.error("Error fetching data", e); }
-    finally { setIsLoading(false); } // 👇 NAYA: Data aane ke baad loading band 👇
-  };
+    finally { setIsLoading(false); }
+  }, [isAuthenticated]);
 
-  useEffect(() => { fetchData(); const interval = setInterval(() => fetchData(), 5000); return () => clearInterval(interval); }, [isAuthenticated]);
+  useEffect(() => { fetchData(); const interval = setInterval(() => fetchData(), 5000); return () => clearInterval(interval); }, [fetchData]);
 
-  const toggleStock = async (product) => { try { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch (error) { alert('Error updating stock'); } };
+  const toggleStock = async (product) => { try { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch { alert('Error updating stock'); } };
   const handleImageUpload = (e, setImageState) => { const file = e.target.files[0]; if (file) { if (file.size > 2000000) return alert("File size should be less than 2MB."); const reader = new FileReader(); reader.onloadend = () => setImageState(reader.result); reader.readAsDataURL(file); } };
   const handleEditCategoryClick = (c) => { setEditingCatId(c._id); setNewCatName(c.name); setNewCatImg(c.image || ''); window.scrollTo(0, 0); };
   const cancelCategoryEdit = () => { setEditingCatId(null); setNewCatName(''); setNewCatImg(''); };
-  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch (error) { alert("Error saving category."); } };
+  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch { alert("Error saving category."); } };
   
   const handleAddonChange = (index, field, value) => { const newAddons = [...addons]; newAddons[index][field] = value; setAddons(newAddons); };
   const addAddonRow = () => setAddons([...addons, { name: '', price: '' }]);
   const removeAddonRow = (index) => setAddons(addons.filter((_, i) => i !== index));
   const handleEditClick = (p) => { setEditingId(p._id); setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || ''); setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price); setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); window.scrollTo(0, 0); };
   
-  const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch (error) { alert('Error saving product'); } };
+  const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch { alert('Error saving product'); } };
   
   const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend-production.up.railway.app/products/${id}`); fetchData(); } };
 
   const updateOrderStatus = async (orderId, newStatus) => {
     setOrders(prevOrders => prevOrders.map(order => (order.id === orderId || order._id === orderId) ? { ...order, status: newStatus } : order));
-    try { await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${orderId}/status?status=${newStatus}`); } catch (error) { fetchData(); }
+    try { await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${orderId}/status?status=${newStatus}`); } catch { fetchData(); }
   };
 
   const getFilteredOrders = () => { const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1); return orders.filter(order => { const orderDate = new Date(order.createdAt || Date.now()); if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); return true; }); };
@@ -105,7 +95,6 @@ const AdminPage = () => {
 
   if (!isAuthenticated) return (
     <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0', fontFamily: 'system-ui, sans-serif' }}>
-      <style>{adminStyles}</style>
       <div className="login-card" style={{ backgroundColor: 'white', padding: '50px 40px', borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', width: '100%', maxWidth: '450px', textAlign: 'center', borderTop: '8px solid #333' }}>
         <div style={{ backgroundColor: '#f1f5f9', width: '80px', height: '80px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '2.5rem', margin: '0 auto 20px auto' }}>🔒</div>
         <h1 style={{ margin: '0 0 10px 0', color: '#1e293b', fontSize: '2.2rem', letterSpacing: '-1px' }}>Admin Access</h1><p style={{ color: '#64748b', marginBottom: '35px', fontSize: '1.1rem' }}>Please verify your credentials.</p>
@@ -121,13 +110,11 @@ const AdminPage = () => {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f6f8', fontFamily: 'system-ui, sans-serif' }}>
-      <style>{adminStyles}</style>
-
-      {/* 👇 NAYA: Admin Dashboard Loading Screen 👇 */}
+      
+      {/* Loading Dashboard Overlay */}
       {isLoading && isAuthenticated && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#f4f6f8', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
            <div style={{ width: '60px', height: '60px', border: '6px solid #e2e8f0', borderTopColor: '#333', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
            <h2 style={{ color: '#333', marginTop: '20px', letterSpacing: '1px' }}>Loading Dashboard...</h2>
         </div>
       )}

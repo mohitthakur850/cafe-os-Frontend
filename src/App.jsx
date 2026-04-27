@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import UserPage from './UserPage';
 import AdminPage from './AdminPage';
@@ -18,7 +18,5 @@ function App() {
     </BrowserRouter>
   );
 }
-
-const linkStyle = { textDecoration: 'none', color: 'black', backgroundColor: 'white', padding: '2px 5px', borderRadius: '3px', margin: '0 5px' };
 
 export default App;

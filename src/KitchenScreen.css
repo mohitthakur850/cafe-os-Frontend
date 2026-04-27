@@ -1,20 +1,188 @@
-.kitchen-container { padding: 20px; background: #f4f7f6; min-height: 100vh; font-family: sans-serif; box-sizing: border-box; }
-.kitchen-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-.kitchen-title { margin: 0; color: #2d3436; font-size: 1.4rem; }
-.kitchen-active-info { color: #636e72; font-weight: bold; font-size: 0.9rem; }
-.kitchen-active-count { color: #d63031; font-size: 1.2rem; }
-.kitchen-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-.kitchen-ticket { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; flex-direction: column; }
-.ticket-header-top { color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
-.ticket-id { font-size: 1.3rem; font-weight: bold; }
-.ticket-status-badge { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
-.ticket-customer-row { padding: 10px 15px; border-bottom: 1px dashed #dfe6e9; display: flex; align-items: center; gap: 8px; }
-.ticket-customer-icon { font-size: 1rem; }
-.ticket-customer-name { font-weight: bold; color: #2d3436; font-size: 1.1rem; }
-.ticket-items-container { padding: 15px; flex: 1; overflow-y: auto; max-height: 150px; }
-.ticket-item-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.95rem; color: #2d3436; }
-.ticket-item-qty { background: #f1f2f6; padding: 2px 8px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
-.ticket-error-msg { color: #636e72; font-size: 0.9rem; }
-.ticket-action-container { padding: 15px; background: #fafafa; border-top: 1px solid #f1f2f6; }
-.btn-ticket-action { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.kitchen-empty-msg { grid-column: 1 / -1; text-align: center; padding: 40px; color: #b2bec3; font-size: 1.2rem; }
+/* =========================================
+   KitchenScreen.css (Perfect Laptop & Mobile Size)
+   ========================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+.kitchen-container {
+  background-color: #f0fdfa;
+  min-height: 100vh;
+  padding: 20px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* ================= LOADING SCREEN ================= */
+.kitchen-loading-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background-color: #f0fdfa; z-index: 9999;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+}
+
+.kitchen-spinner {
+  width: 50px; height: 50px;
+  border: 5px solid #cffafe; border-top-color: #0ea5e9;
+  border-radius: 50%; animation: kitchenSpin 1s linear infinite;
+}
+
+.kitchen-loading-text {
+  color: #333; margin-top: 15px; font-size: 1.2rem; letter-spacing: 1px;
+}
+
+@keyframes kitchenSpin { 
+  0% { transform: rotate(0deg); } 
+  100% { transform: rotate(360deg); } 
+}
+
+/* ================= HEADER ================= */
+.kitchen-header {
+  background-color: white;
+  padding: 10px 20px; /* Slim padding */
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.03); /* Soft shadow */
+}
+
+.kitchen-title {
+  margin: 0; color: #333;
+  font-size: 1.4rem; /* Compact font */
+  display: flex; align-items: center; gap: 8px;
+}
+
+.kitchen-active-count {
+  font-size: 1rem; font-weight: bold; color: #555;
+}
+
+.kitchen-active-number { color: #dc2626; }
+
+/* ================= EMPTY STATE ================= */
+.kitchen-empty-state {
+  text-align: center;
+  margin-top: 15vh;
+  display: flex; flex-direction: column;
+  align-items: center;
+  animation: kitchenFadeIn 0.5s ease-out forwards;
+}
+
+@keyframes kitchenFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kitchen-empty-icon {
+  width: 60px !important; /* Pehle jaisa chota size */
+  height: 60px !important;
+  margin-bottom: 12px;
+}
+
+.kitchen-empty-title {
+  font-size: 1.5rem; /* Title size chota kiya */
+  color: #64748b; margin: 0 0 5px 0;
+  letter-spacing: -0.5px;
+}
+
+.kitchen-empty-subtitle {
+  font-size: 1rem; color: #94a3b8; font-weight: 500;
+}
+
+/* ================= GRID & CARDS ================= */
+.kitchen-grid {
+  display: grid;
+  /* Laptop par fixed 300px width taaki stretch na ho */
+  grid-template-columns: repeat(auto-fill, 300px); 
+  gap: 15px; 
+  align-items: start;
+  justify-content: start;
+}
+
+.kitchen-card {
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex; flex-direction: column;
+  transition: opacity 0.2s;
+  width: 100%;
+}
+
+.kitchen-card.processing { opacity: 0.6; pointer-events: none; }
+
+.card-top-bar {
+  padding: 10px 15px; 
+  display: flex; justify-content: space-between;
+  align-items: center; color: white;
+}
+
+.card-order-id {
+  margin: 0; font-size: 1.2rem; font-weight: 900;
+}
+
+.card-status-badge {
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 3px 10px; border-radius: 12px;
+  font-size: 0.7rem; font-weight: bold;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+
+/* ================= CARD BODY ================= */
+.card-body {
+  padding: 15px; 
+  flex: 1;
+}
+
+.card-customer {
+  display: flex; align-items: center; gap: 8px;
+  color: #1f2937; font-weight: bold; font-size: 1rem;
+  margin-bottom: 12px; border-bottom: 2px solid #f3f4f6;
+  padding-bottom: 12px;
+}
+
+.item-list {
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.item-row {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; color: #4b5563;
+  font-size: 0.9rem; font-weight: 600;
+}
+
+.item-name-col { flex: 1; padding-right: 10px; }
+
+.item-addons {
+  font-size: 0.8rem; color: #9ca3af; margin-top: 2px;
+}
+
+.item-qty {
+  background-color: #f1f5f9; padding: 2px 8px;
+  border-radius: 6px; font-weight: bold;
+  color: #334155; font-size: 0.8rem;
+}
+
+/* ================= BUTTONS ================= */
+.card-action-box {
+  padding: 0 15px 15px 15px; 
+}
+
+.kitchen-btn {
+  width: 100%; padding: 10px; 
+  color: white; border: none; border-radius: 6px;
+  font-size: 0.95rem; font-weight: bold;
+  cursor: pointer; transition: all 0.2s;
+}
+
+/* ================= RESPONSIVE DESIGN FOR SMARTPHONES ================= */
+@media screen and (max-width: 600px) {
+  .kitchen-container { padding: 10px; }
+  .kitchen-grid { 
+    /* Mobile par full width lega taaki screen ke bahar na jaye */
+    grid-template-columns: 1fr; 
+  }
+  .kitchen-header { padding: 10px; }
+  .kitchen-title { font-size: 1.2rem; }
+}

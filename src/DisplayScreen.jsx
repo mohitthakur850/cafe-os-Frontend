@@ -10,31 +10,35 @@ export default function DisplayScreen() {
   const prepRef = useRef(null);
   const collRef = useRef(null);
 
+  // 👇 100% WORKING LIVE UPDATE LOGIC 👇
   useEffect(() => {
-    // 👇 NAYA: Ek function banaya jo orders fetch karega
-    const loadOrders = () => {
-      fetch(`${API_URL}/orders`)
+    const fetchLiveOrders = () => {
+      // ?t=${Date.now()} aur no-store ensure karta hai ki browser purana data na dikhaye
+      fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           setOrders(data);
-          setIsLoading(false); 
+          setIsLoading(false); // Data aate hi loading screen band
         })
         .catch(err => {
-          console.error(err);
+          console.error("Live Update Error:", err);
           setIsLoading(false);
         });
     };
 
-    // Pehli baar turant fetch karo
-    loadOrders();
+    // 1. Pehli baar turant load karo
+    fetchLiveOrders();
 
-    // 👇 NAYA: Har 3 second baad naye orders fetch karta rahega (LIVE UPDATE)
-    const dataInterval = setInterval(loadOrders, 3000);
+    // 2. Har 3 second baad chupchap background mein data fetch karo (Bilkul Kitchen Screen ki tarah)
+    const intervalId = setInterval(() => {
+      fetchLiveOrders();
+    }, 3000);
 
-    return () => clearInterval(dataInterval);
+    // Jab screen band ho toh interval clear karo
+    return () => clearInterval(intervalId);
   }, []);
 
-  // Auto-scroll wala hissa (Purana wala hi hai)
+  // 👇 AUTO-SCROLL LOGIC 👇
   useEffect(() => {
     const autoScroll = (ref) => {
       if (ref.current) {
@@ -58,11 +62,11 @@ export default function DisplayScreen() {
   return (
     <div className="display-container">
       
+      {/* LOADING SCREEN */}
       {isLoading && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#1e272e', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-           <div style={{ width: '80px', height: '80px', border: '8px solid #2d3436', borderTopColor: '#00b894', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-           <h2 style={{ color: 'white', marginTop: '30px', fontSize: '2.5rem', letterSpacing: '2px' }}>Loading Live Screen... 📺</h2>
+        <div className="tv-loading-overlay">
+           <div className="tv-loading-spinner"></div>
+           <h2 className="tv-loading-text">Loading Live Screen... 📺</h2>
         </div>
       )}
 
