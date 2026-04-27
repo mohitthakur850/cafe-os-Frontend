@@ -9,36 +9,26 @@ export default function DisplayScreen() {
   
   const prepRef = useRef(null);
   const collRef = useRef(null);
-
-  // 👇 100% WORKING LIVE UPDATE LOGIC 👇
   useEffect(() => {
     const fetchLiveOrders = () => {
-      // ?t=${Date.now()} aur no-store ensure karta hai ki browser purana data na dikhaye
       fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
         .then(res => res.json())
         .then(data => {
           setOrders(data);
-          setIsLoading(false); // Data aate hi loading screen band
+          setIsLoading(false);
         })
         .catch(err => {
           console.error("Live Update Error:", err);
           setIsLoading(false);
         });
     };
-
-    // 1. Pehli baar turant load karo
     fetchLiveOrders();
-
-    // 2. Har 3 second baad chupchap background mein data fetch karo (Bilkul Kitchen Screen ki tarah)
     const intervalId = setInterval(() => {
       fetchLiveOrders();
     }, 3000);
-
-    // Jab screen band ho toh interval clear karo
     return () => clearInterval(intervalId);
   }, []);
 
-  // 👇 AUTO-SCROLL LOGIC 👇
   useEffect(() => {
     const autoScroll = (ref) => {
       if (ref.current) {

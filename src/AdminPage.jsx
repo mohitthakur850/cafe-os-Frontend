@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import './AdminPage.css'; // 👇 NAYA: Yahan CSS file import kar li
-
+import './AdminPage.css';
 const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [usernameInput, setUsernameInput] = useState('');
@@ -18,7 +17,15 @@ const AdminPage = () => {
   const [editingId, setEditingId] = useState(null);
   const [editingCatId, setEditingCatId] = useState(null); 
 
-  const [name, setName] = useState(''); const [category, setCategory] = useState(''); const [subCategory, setSubCategory] = useState(''); const [description, setDescription] = useState(''); const [image, setImage] = useState(''); const [price, setPrice] = useState(''); const [addons, setAddons] = useState([{ name: '', price: '' }]); const [newCatName, setNewCatName] = useState(''); const [newCatImg, setNewCatImg] = useState('');
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [image, setImage] = useState('');
+  const [price, setPrice] = useState('');
+  const [addons, setAddons] = useState([{ name: '', price: '' }]);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatImg, setNewCatImg] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();

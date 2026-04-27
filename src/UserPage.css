@@ -70,14 +70,13 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
   .home-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 }
 
-/* SMARTPHONE (MOBILE) - THE MAGIC FIX */
+
 @media screen and (max-width: 600px) {
   .idle-title { font-size: 3.5rem; text-align: center; }
   .idle-subtitle { font-size: 1.2rem; padding: 15px 30px; }
   
   .menu-layout { flex-direction: column; }
-  
-  /* 👇 NAYA: Sidebar ko mobile par chota karke horizontal banaya 👇 */
+
   .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #eaeaea; }
   .sidebar-home-wrapper { padding: 10px !important; }
   .sidebar-home-wrapper button { padding: 10px !important; font-size: 1rem !important; }
@@ -90,9 +89,9 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
     overflow-y: hidden !important; 
     padding: 0 10px 10px 10px !important; 
     gap: 10px; 
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none; 
   }
-  .category-list-container::-webkit-scrollbar { display: none; } /* Safari/Chrome */
+  .category-list-container::-webkit-scrollbar { display: none; }
   
   .sidebar-btn { margin-bottom: 0 !important; flex-shrink: 0; padding: 6px 12px !important; border-radius: 20px !important; }
   .sidebar-btn img { width: 25px !important; height: 25px !important; }

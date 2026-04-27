@@ -1,6 +1,3 @@
-/* =========================================
-   KitchenScreen.css (Perfect Laptop & Mobile Size)
-   ========================================= */
 
 * {
   box-sizing: border-box;
@@ -39,18 +36,18 @@
 /* ================= HEADER ================= */
 .kitchen-header {
   background-color: white;
-  padding: 10px 20px; /* Slim padding */
+  padding: 10px 20px; 
   border-radius: 8px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.03); /* Soft shadow */
+  box-shadow: 0 1px 5px rgba(0,0,0,0.03);
 }
 
 .kitchen-title {
   margin: 0; color: #333;
-  font-size: 1.4rem; /* Compact font */
+  font-size: 1.4rem;
   display: flex; align-items: center; gap: 8px;
 }
 
@@ -75,13 +72,13 @@
 }
 
 .kitchen-empty-icon {
-  width: 60px !important; /* Pehle jaisa chota size */
+  width: 60px !important; 
   height: 60px !important;
   margin-bottom: 12px;
 }
 
 .kitchen-empty-title {
-  font-size: 1.5rem; /* Title size chota kiya */
+  font-size: 1.5rem; 
   color: #64748b; margin: 0 0 5px 0;
   letter-spacing: -0.5px;
 }
@@ -93,7 +90,6 @@
 /* ================= GRID & CARDS ================= */
 .kitchen-grid {
   display: grid;
-  /* Laptop par fixed 300px width taaki stretch na ho */
   grid-template-columns: repeat(auto-fill, 300px); 
   gap: 15px; 
   align-items: start;
@@ -180,7 +176,6 @@
 @media screen and (max-width: 600px) {
   .kitchen-container { padding: 10px; }
   .kitchen-grid { 
-    /* Mobile par full width lega taaki screen ke bahar na jaye */
     grid-template-columns: 1fr; 
   }
   .kitchen-header { padding: 10px; }

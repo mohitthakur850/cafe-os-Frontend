@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import './KitchenScreen.css'; // 👇 NAYA: Yahan CSS file import kar li
+import './KitchenScreen.css';
 
 const KitchenScreen = () => {
   const [orders, setOrders] = useState([]);
@@ -95,7 +95,7 @@ const KitchenScreen = () => {
             return (
               <div key={uniqueTargetId} className={`kitchen-card ${isProcessing ? 'processing' : ''}`}>
                 
-                {/* Header color dynamic hai, isliye inline rakha hai */}
+                {/* Header color dynamic*/}
                 <div className="card-top-bar" style={{ backgroundColor: headerColor }}>
                   <h2 className="card-order-id">#{order.id}</h2>
                   <span className="card-status-badge">{order.status}</span>
