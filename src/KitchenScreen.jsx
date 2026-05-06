@@ -7,16 +7,16 @@ const KitchenScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
 
-  const fetchOrders = () => {
-    axios.get('https://cafe-os-backend-production.up.railway.app/orders')
-      .then(res => {
-        setOrders(res.data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching orders", err);
-        setIsLoading(false);
-      });
+  // 👇 NAYA: Is function ko 'async' banaya taaki hum iska wait kar sakein
+  const fetchOrders = async () => {
+    try {
+      const res = await axios.get('https://cafe-os-backend-production.up.railway.app/orders');
+      setOrders(res.data);
+    } catch (err) {
+      console.error("Error fetching orders", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -29,10 +29,12 @@ const KitchenScreen = () => {
     setProcessingId(id); 
     try {
       await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=${newStatus}`);
-      fetchOrders(); 
+      // 👇 NAYA: Ab jab tak fresh orders wapas nahi aayenge, tab tak 'await' karega
+      await fetchOrders(); 
     } catch {
       alert('Error updating status');
     } finally {
+      // Data aane ke baad hi "Updating..." hatega
       setProcessingId(null); 
     }
   };
@@ -41,7 +43,8 @@ const KitchenScreen = () => {
     setProcessingId(id); 
     try {
       await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=Completed`);
-      fetchOrders();
+      // 👇 NAYA: Same here, wait for fresh data
+      await fetchOrders();
     } catch {
       alert('Error completing order');
     } finally {
@@ -95,7 +98,6 @@ const KitchenScreen = () => {
             return (
               <div key={uniqueTargetId} className={`kitchen-card ${isProcessing ? 'processing' : ''}`}>
                 
-                {/* Header color dynamic*/}
                 <div className="card-top-bar" style={{ backgroundColor: headerColor }}>
                   <h2 className="card-order-id">#{order.id}</h2>
                   <span className="card-status-badge">{order.status}</span>
