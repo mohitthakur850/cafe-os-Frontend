@@ -109,7 +109,7 @@ const UserPage = () => {
     <div onClick={() => setActiveScreen('HOME')} className="idle-screen">
      <img src="/cafe.png" alt="Cafe" className="idle-bg" />
       <div className="idle-overlay"></div>
-      <h1 className="idle-title">Vendiman<span style={{ color: '#ffcc00' }}> Cafe</span></h1>
+     // <h1 className="idle-title">Vendiman<span style={{ color: '#ffcc00' }}> Cafe</span></h1>//
       <p className="idle-subtitle">🍔 Touch Anywhere to Start</p>
     </div>
   );
