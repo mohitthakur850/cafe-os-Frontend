@@ -1,6 +1,13 @@
+/* =========================================
+   AdminPage.css (Responsive Dashboard)
+   ========================================= */
+
+* {
+  box-sizing: border-box;
+}
 
 .admin-wrapper { 
-  padding: 20px; 
+  padding: 15px; 
   width: 100%; 
   box-sizing: border-box; 
   max-width: 100%; 
@@ -14,6 +21,7 @@
   .admin-wrapper { padding: 40px 60px; } 
 }
 
+/* ================= GRID LAYOUT ================= */
 .auto-grid { 
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
@@ -27,7 +35,105 @@
   } 
 }
 
-/* Animations */
+/* ================= ADMIN TOP HEADER & BUTTONS ================= */
+/* Flex-wrap se agar screen choti hogi toh buttons automatically agli line mein aayenge */
+.admin-top-header {
+  display: flex;
+  flex-wrap: wrap; 
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  background-color: #2d2d2d; /* Dark background jo screenshot mein hai */
+  padding: 20px;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 20px;
+}
+
+.admin-header-title {
+  color: white;
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.admin-nav-buttons {
+  display: flex;
+  flex-wrap: wrap; /* Buttons squish nahi honge, wrap ho jayenge */
+  gap: 10px;
+  align-items: center;
+}
+
+/* Standard button style inside admin */
+.admin-nav-buttons button {
+  padding: 10px 15px;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap; /* Text do line mein tutne se bachayega */
+}
+
+/* ================= ORDER HISTORY & ANALYTICS HEADER ================= */
+.analytics-header-section {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.analytics-title {
+  margin: 0;
+  font-size: 2rem;
+  color: #333;
+}
+
+.analytics-stats-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  background-color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* ================= MOBILE / SMARTPHONE RESPONSIVENESS ================= */
+@media screen and (max-width: 768px) {
+  
+  /* Mobile par header ke elements upar-neeche (stack) ho jayenge */
+  .admin-top-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px;
+  }
+
+  .admin-nav-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Mobile par buttons screen ki puri width lenge ya aapas mein fit honge */
+  .admin-nav-buttons button {
+    flex: 1; 
+    min-width: 120px; /* Isse buttons zyada patle nahi honge */
+    text-align: center;
+    padding: 12px 10px;
+  }
+
+  .analytics-header-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .analytics-stats-box {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* ================= ANIMATIONS ================= */
 @keyframes slideDown { 
   from { transform: translateY(-20px); opacity: 0; } 
   to { transform: translateY(0); opacity: 1; } 
