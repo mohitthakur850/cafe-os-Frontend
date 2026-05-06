@@ -12,6 +12,11 @@ const AdminPage = () => {
 
   const [activeTab, setActiveTab] = useState('ORDERS'); 
   const [orderFilter, setOrderFilter] = useState('Today'); 
+  
+  // 👇 NAYA: Custom Date Range ke liye states 👇
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -68,7 +73,39 @@ const AdminPage = () => {
     try { await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${orderId}/status?status=${newStatus}`); } catch { fetchData(); }
   };
 
-  const getFilteredOrders = () => { const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1); return orders.filter(order => { const orderDate = new Date(order.createdAt || Date.now()); if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); return true; }); };
+  // 👇 NAYA: Advanced Filter Logic (Today, Yesterday, Last Month, Custom Range) 👇
+  const getFilteredOrders = () => { 
+    const today = new Date(); 
+    
+    const yesterday = new Date(today); 
+    yesterday.setDate(yesterday.getDate() - 1); 
+
+    const lastMonth = new Date(today);
+    lastMonth.setDate(lastMonth.getDate() - 30); // Last 30 days
+    
+    return orders.filter(order => { 
+      const orderDate = new Date(order.createdAt || Date.now()); 
+      
+      if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); 
+      if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); 
+      if (orderFilter === 'Last Month') return orderDate >= lastMonth && orderDate <= today;
+      
+      if (orderFilter === 'Custom Range') {
+        if (!startDate || !endDate) return true; // Agar date select nahi ki toh sab dikhayega
+        
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+        
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+        
+        return orderDate >= sDate && orderDate <= eDate;
+      }
+
+      return true; 
+    }); 
+  };
+
   const allFilteredOrders = getFilteredOrders();
   const liveOrders = allFilteredOrders.filter(o => o.status !== 'Completed');
   const completedHistory = allFilteredOrders.filter(o => o.status === 'Completed');
@@ -119,7 +156,6 @@ const AdminPage = () => {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f4f6f8', fontFamily: 'system-ui, sans-serif' }}>
       
-      {/* Loading Dashboard Overlay */}
       {isLoading && isAuthenticated && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: '#f4f6f8', zIndex: 9999, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
            <div style={{ width: '60px', height: '60px', border: '6px solid #e2e8f0', borderTopColor: '#333', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -127,7 +163,6 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* 👇 NAYA: Header proper CSS class ke sath 👇 */}
       <div className="admin-navbar">
         <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '1px' }}>RE:FILL Admin</h1>
         <div className="admin-nav-right">
@@ -140,14 +175,33 @@ const AdminPage = () => {
 
       {activeTab === 'ORDERS' && (
         <div className="admin-wrapper">
-          {/* 👇 NAYA: Analytics header proper CSS class ke sath 👇 */}
           <div className="analytics-header">
             <h2 style={{ fontSize: '2.2rem', margin: 0, color: '#333' }}>Order History & Analytics</h2>
+            
+            {/* 👇 NAYA: Yaha Dropdown aur Date Pickers set kiye hain 👇 */}
             <div className="analytics-stats">
               <div style={{ backgroundColor: 'white', padding: '10px 20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', gap: '20px' }}><div><span style={{color: '#888'}}>Completed:</span> <strong style={{color: '#333', fontSize: '1.2rem'}}>{completedHistory.length}</strong></div><div><span style={{color: '#888'}}>Revenue:</span> <strong style={{color: '#28a745', fontSize: '1.2rem'}}>₹{totalRevenue}</strong></div></div>
-              <select value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)} style={{ padding: '12px 20px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}><option value="Today">Today</option><option value="Yesterday">Yesterday</option><option value="All Time">All Time</option></select>
+              
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <select value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)} style={{ padding: '12px 20px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
+                  <option value="Today">Today</option>
+                  <option value="Yesterday">Yesterday</option>
+                  <option value="Last Month">Last Month</option>
+                  <option value="Custom Range">Custom Range</option>
+                </select>
+
+                {/* Jab 'Custom Range' select hoga tabhi calendar khulega */}
+                {orderFilter === 'Custom Range' && (
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                    <span style={{fontWeight: 'bold', color: '#555'}}>To</span>
+                    <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+          
           {liveOrders.length > 0 && (<div style={{ marginBottom: '50px' }}><h2 style={{ color: '#0ea5e9', marginBottom: '20px', borderBottom: '2px solid #e0f2fe', paddingBottom: '10px' }}>🔥 Live Kitchen Orders ({liveOrders.length})</h2><div className="auto-grid">{liveOrders.map(order => renderOrderCard(order, true))}</div></div>)}
           <div><h2 style={{ color: '#22c55e', marginBottom: '20px', borderBottom: '2px solid #dcfce7', paddingBottom: '10px' }}>✅ Past Order History ({completedHistory.length})</h2>{completedHistory.length === 0 ? (<p style={{ color: '#888', fontSize: '1.2rem' }}>No completed orders found.</p>) : (<div className="auto-grid">{completedHistory.map(order => renderOrderCard(order, false))}</div>)}</div>
         </div>
@@ -178,7 +232,6 @@ const AdminPage = () => {
         </div>
       )}
 
-      {/* 👇 NAYA: Menu Tab Layout proper CSS class ke sath 👇 */}
       {activeTab === 'MENU' && (
         <div className="menu-layout">
           <div className="menu-form-section">
