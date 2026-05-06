@@ -107,7 +107,7 @@ const UserPage = () => {
 
   if (activeScreen === 'IDLE') return (
     <div onClick={() => setActiveScreen('HOME')} className="idle-screen">
-      <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop" alt="Cafe" className="idle-bg" />
+      <img src="https://drive.google.com/file/d/1pCIAhibzy9H_aWZd89aBbDCm8SN0Wjw_/view?usp=sharing" alt="Cafe" className="idle-bg" />
       <div className="idle-overlay"></div>
       <h1 className="idle-title">Vendiman<span style={{ color: '#ffcc00' }}> Cafe</span></h1>
       <p className="idle-subtitle">🍔 Touch Anywhere to Start</p>
