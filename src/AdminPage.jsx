@@ -13,7 +13,7 @@ const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('ORDERS'); 
   const [orderFilter, setOrderFilter] = useState('Today'); 
   
-  // 👇 NAYA: Custom Date Range ke liye states 👇
+  // Custom Date Range States
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -73,25 +73,30 @@ const AdminPage = () => {
     try { await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${orderId}/status?status=${newStatus}`); } catch { fetchData(); }
   };
 
-  // 👇 NAYA: Advanced Filter Logic (Today, Yesterday, Last Month, Custom Range) 👇
+  // ✅ UPDATED FILTER LOGIC: Today, Yesterday, Last 30 Days, Last Month, Custom Range
   const getFilteredOrders = () => { 
     const today = new Date(); 
     
     const yesterday = new Date(today); 
     yesterday.setDate(yesterday.getDate() - 1); 
 
-    const lastMonth = new Date(today);
-    lastMonth.setDate(lastMonth.getDate() - 30); // Last 30 days
+    const last30Days = new Date(today);
+    last30Days.setDate(last30Days.getDate() - 30);
     
+    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    endOfLastMonth.setHours(23, 59, 59, 999);
+
     return orders.filter(order => { 
       const orderDate = new Date(order.createdAt || Date.now()); 
       
       if (orderFilter === 'Today') return orderDate.toDateString() === today.toDateString(); 
       if (orderFilter === 'Yesterday') return orderDate.toDateString() === yesterday.toDateString(); 
-      if (orderFilter === 'Last Month') return orderDate >= lastMonth && orderDate <= today;
+      if (orderFilter === 'Last 30 Days') return orderDate >= last30Days && orderDate <= today;
+      if (orderFilter === 'Last Month') return orderDate >= startOfLastMonth && orderDate <= endOfLastMonth;
       
       if (orderFilter === 'Custom Range') {
-        if (!startDate || !endDate) return true; // Agar date select nahi ki toh sab dikhayega
+        if (!startDate || !endDate) return true; 
         
         const sDate = new Date(startDate);
         sDate.setHours(0, 0, 0, 0);
@@ -178,7 +183,6 @@ const AdminPage = () => {
           <div className="analytics-header">
             <h2 style={{ fontSize: '2.2rem', margin: 0, color: '#333' }}>Order History & Analytics</h2>
             
-            {/* 👇 NAYA: Yaha Dropdown aur Date Pickers set kiye hain 👇 */}
             <div className="analytics-stats">
               <div style={{ backgroundColor: 'white', padding: '10px 20px', borderRadius: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', display: 'flex', gap: '20px' }}><div><span style={{color: '#888'}}>Completed:</span> <strong style={{color: '#333', fontSize: '1.2rem'}}>{completedHistory.length}</strong></div><div><span style={{color: '#888'}}>Revenue:</span> <strong style={{color: '#28a745', fontSize: '1.2rem'}}>₹{totalRevenue}</strong></div></div>
               
@@ -186,11 +190,11 @@ const AdminPage = () => {
                 <select value={orderFilter} onChange={(e) => setOrderFilter(e.target.value)} style={{ padding: '12px 20px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: 'white', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
                   <option value="Today">Today</option>
                   <option value="Yesterday">Yesterday</option>
+                  <option value="Last 30 Days">Last 30 Days</option>
                   <option value="Last Month">Last Month</option>
                   <option value="Custom Range">Custom Range</option>
                 </select>
 
-                {/* Jab 'Custom Range' select hoga tabhi calendar khulega */}
                 {orderFilter === 'Custom Range' && (
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ccc', outline: 'none' }} />
