@@ -4,7 +4,14 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
-.user-container { background-color: #f9f9f9; height: 100vh; overflow: hidden; }
+
+/* 👇 FIX 1: Container ko flex banaya aur overflow hataya taaki mobile par scroll lock na ho */
+.user-container { 
+  background-color: #f9f9f9; 
+  height: 100vh; 
+  display: flex;
+  flex-direction: column;
+}
 
 /* ================= ANIMATIONS ================= */
 @keyframes slideUpFade { 0% { opacity: 0; transform: translateY(30px); } 100% { opacity: 1; transform: translateY(0); } }
@@ -15,13 +22,12 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 @keyframes shakeError { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
 
 /* ================= IDLE SCREEN ================= */
-.idle-screen { height: 100vh; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
+.idle-screen { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
 
 .idle-bg { 
   position: absolute; 
   top: 0; left: 0; width: 100%; height: 100%; 
   object-fit: cover; 
-  /* Image position adjust kiye taaki logo center mein aaye */
   object-position: center 90%; 
   animation: slowZoom 20s ease-in-out infinite; 
   z-index: -2; 
@@ -35,7 +41,6 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
   letter-spacing: 3px; 
   color: #ffffff; 
   font-weight: 900; 
-  /* 3D Drop Shadow effect */
   text-shadow: 4px 4px 0px #111, 8px 8px 15px rgba(0,0,0,0.9), 0 0 40px rgba(255, 204, 0, 0.4); 
   animation: fadeIn 0.4s ease-in-out forwards; 
 }
@@ -45,7 +50,6 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
   animation: pulseHeart 2s infinite; 
   font-weight: 900; 
   color: #111; 
-  /* Premium Glossy Button effect */
   background: linear-gradient(135deg, #ffcc00, #ffb300); 
   padding: 20px 50px; 
   border-radius: 50px; 
@@ -58,9 +62,14 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 /* ================= LAYOUTS ================= */
 .animated-grid { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; }
-.menu-layout { display: flex; height: 100%; }
 
-.sidebar { width: 280px; background-color: white; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; }
+.menu-layout { 
+  display: flex; 
+  flex: 1;
+  overflow: hidden; 
+}
+
+.sidebar { width: 280px; background-color: white; border-right: 1px solid #eaeaea; display: flex; flex-direction: column; z-index: 10; flex-shrink: 0; }
 .menu-content { flex: 1; overflow-y: auto; background-color: #fcfcfc; display: flex; flex-direction: column; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px; }
 
@@ -104,13 +113,12 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
   .home-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 }
 
+/* SMARTPHONE (MOBILE) */
 @media screen and (max-width: 600px) {
   .idle-title { font-size: 3.5rem; text-align: center; }
-  .idle-subtitle { font-size: 0.95rem; padding: 12px 22px; white-space: nowrap;}
-.product-grid {padding-bottom: 220px !important; }
-
+  .idle-subtitle { font-size: 0.95rem; padding: 12px 22px; white-space: nowrap; }
   
-  .menu-layout { flex-direction: column; }
+  .menu-layout { flex-direction: column; overflow: visible; }
 
   .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #eaeaea; }
   .sidebar-home-wrapper { padding: 10px !important; }
@@ -142,8 +150,12 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
   .category-banner { height: 100px !important; }
   .category-banner h1 { font-size: 1.8rem !important; bottom: 15px !important; left: 15px !important; }
 
-  /* Product Grid: 3 items per row automatically */
-  .product-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  /* 👇 FIX 2: Dono properties ko ek hi block mein daala taaki override na ho 👇 */
+  .product-grid { 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; 
+    padding-bottom: 240px !important; /* Bottom bar se bachane ke liye solid space */
+  }
   
   /* Product Card Shrinking */
   .product-card { border-radius: 12px; }
