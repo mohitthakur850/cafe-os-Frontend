@@ -8,7 +8,7 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 /* 👇 FIX 1: Container ko flex banaya aur overflow hataya taaki mobile par scroll lock na ho */
 .user-container { 
   background-color: #f9f9f9; 
-  height: 100vh; 
+  min-height: 100vh; 
   display: flex;
   flex-direction: column;
 }
@@ -22,7 +22,17 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 @keyframes shakeError { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
 
 /* ================= IDLE SCREEN ================= */
-.idle-screen { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; }
+.idle-screen { 
+  height: 100vh; 
+  width: 100%;
+  position: relative; 
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center; 
+  cursor: pointer; 
+  overflow: hidden; 
+}
 
 .idle-bg { 
   position: absolute; 
