@@ -106,11 +106,9 @@ body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
 
 @media screen and (max-width: 600px) {
   .idle-title { font-size: 3.5rem; text-align: center; }
-  .idle-subtitle { 
-  font-size: 0.95rem; 
-  padding: 12px 22px; 
-  white-space: nowrap; /* 👇 Yeh text ko 1 line mein lock kar dega */
-}
+  .idle-subtitle { font-size: 0.95rem; padding: 12px 22px; white-space: nowrap;}
+.product-grid {padding-bottom: 220px !important; }
+
   
   .menu-layout { flex-direction: column; }
 
