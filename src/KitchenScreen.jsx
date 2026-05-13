@@ -24,10 +24,18 @@ const KitchenScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const updateOrderStatus = async (id, newStatus) => {
-    setProcessingId(id); 
+  // 👇 NAYA: Ek se zyada IDs ko ek saath update karne ke liye Promise.all lagaya 👇
+  const updateOrderStatus = async (ids, newStatus) => {
+    // Check karte hain ki single ID hai ya array, fir sabko array bana lete hain
+    const idArray = Array.isArray(ids) ? ids : [ids];
+    setProcessingId(idArray[0]); 
     try {
-      await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=${newStatus}`);
+      // Saare grouped orders ko backend me ek saath parallel update karega
+      await Promise.all(
+        idArray.map(id => 
+          axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=${newStatus}`)
+        )
+      );
       await fetchOrders(); 
     } catch {
       alert('Error updating status');
@@ -36,10 +44,16 @@ const KitchenScreen = () => {
     }
   };
 
-  const handleCompleteOrder = async (id) => {
-    setProcessingId(id); 
+  // 👇 NAYA: Hand Over button ke liye bhi same multi-ID logic 👇
+  const handleCompleteOrder = async (ids) => {
+    const idArray = Array.isArray(ids) ? ids : [ids];
+    setProcessingId(idArray[0]); 
     try {
-      await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=Completed`);
+      await Promise.all(
+        idArray.map(id => 
+          axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=Completed`)
+        )
+      );
       await fetchOrders();
     } catch {
       alert('Error completing order');
@@ -50,15 +64,13 @@ const KitchenScreen = () => {
 
   const activeOrders = orders.filter(o => o.status === 'Accepted' || o.status === 'Preparing' || o.status === 'Ready');
 
-  // 👇 NAYA: Rendering se pehle orders ko Customer Name aur Status ke hisaab se Group kiya 👇
+  // 👇 NAYA: Grouping me hum saare merged order IDs ko ek array (allTargetIds) me store kar lete hain 👇
   const groupedOrders = activeOrders.reduce((acc, currentOrder) => {
-    // Check karein agar is bande ka same status wala card pehle se list mein hai
     const existingGroup = acc.find(group => 
       group.customer_name?.toLowerCase().trim() === currentOrder.customer_name?.toLowerCase().trim() &&
       group.status === currentOrder.status
     );
 
-    // Current order ke items nikal lo (agar nested items na ho toh khud current order ko item maan lo)
     const currentItems = currentOrder.items && currentOrder.items.length > 0 
       ? currentOrder.items 
       : [{ 
@@ -68,18 +80,21 @@ const KitchenScreen = () => {
           itemTotal: currentOrder.itemTotal || currentOrder.price || 0 
         }];
 
+    const currentOrderId = currentOrder._id || currentOrder.id;
+
     if (existingGroup) {
-      // Agar group exist karta hai, toh naye items usi list mein add kar do
       existingGroup.items = [...existingGroup.items, ...currentItems];
-      // Note: Hum button action ke liye primary/first ID hi use karenge
+      // Agar naya ID hai toh use bhi allTargetIds me daal dete hain
+      if (currentOrderId && !existingGroup.allTargetIds.includes(currentOrderId)) {
+        existingGroup.allTargetIds.push(currentOrderId);
+      }
     } else {
-      // Naya banda hai toh naya object bana kar push kar do
       acc.push({
         ...currentOrder,
-        // Items array safely assign karte hain
         items: [...currentItems],
-        // Target ID mapping ke liye
-        primaryTargetId: currentOrder._id || currentOrder.id 
+        primaryTargetId: currentOrderId,
+        // Shuruat me pehli ID ko array me save kiya
+        allTargetIds: currentOrderId ? [currentOrderId] : []
       });
     }
 
@@ -99,7 +114,6 @@ const KitchenScreen = () => {
       <div className="kitchen-header">
         <h1 className="kitchen-title">Kitchen Orders 👨‍🍳</h1>
         <div className="kitchen-active-count">
-          {/* Total individual cards count */}
           Active: <span className="kitchen-active-number">{groupedOrders.length}</span>
         </div>
       </div>
@@ -115,28 +129,28 @@ const KitchenScreen = () => {
         </div>
       ) : (
         <div className="kitchen-grid">
-          {/* 👇 NAYA: Ab 'activeOrders' ki jagah 'groupedOrders.map' chalaya 👇 */}
           {groupedOrders.map((orderGroup) => {
             const isAccepted = orderGroup.status === 'Accepted';
             const isPreparing = orderGroup.status === 'Preparing';
             
             let headerColor, btnColor, btnText, action;
-            const targetId = orderGroup.primaryTargetId;
-            const isProcessing = processingId === targetId;
+            // Hum is group ke saare IDs pass karenge action me
+            const targetIds = orderGroup.allTargetIds;
+            const isProcessing = processingId === orderGroup.primaryTargetId;
 
             if (isAccepted) { 
               headerColor = '#f5a623'; btnColor = '#0ea5e9'; btnText = '🔥 Start Preparing'; 
-              action = () => updateOrderStatus(targetId, 'Preparing'); 
+              action = () => updateOrderStatus(targetIds, 'Preparing'); 
             } else if (isPreparing) { 
               headerColor = '#2196f3'; btnColor = '#22c55e'; btnText = '✓ Mark as Ready'; 
-              action = () => updateOrderStatus(targetId, 'Ready'); 
+              action = () => updateOrderStatus(targetIds, 'Ready'); 
             } else { 
               headerColor = '#22c55e'; btnColor = '#e74c3c'; btnText = '🤝 Hand Over'; 
-              action = () => handleCompleteOrder(targetId); 
+              action = () => handleCompleteOrder(targetIds); 
             }
 
             return (
-              <div key={targetId} className={`kitchen-card ${isProcessing ? 'processing' : ''}`}>
+              <div key={orderGroup.primaryTargetId} className={`kitchen-card ${isProcessing ? 'processing' : ''}`}>
                 
                 <div className="card-top-bar" style={{ backgroundColor: headerColor }}>
                   <h2 className="card-order-id">#{orderGroup.id}</h2>
@@ -146,7 +160,6 @@ const KitchenScreen = () => {
                 <div className="card-body">
                   <div className="card-customer">👤 {orderGroup.customer_name}</div>
                   <div className="item-list">
-                    {/* Combine kiye hue saare items yahan render honge */}
                     {orderGroup.items.map((item, i) => (
                       <div key={i} className="item-row">
                         <div className="item-name-col">
