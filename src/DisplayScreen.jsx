@@ -9,6 +9,7 @@ export default function DisplayScreen() {
   
   const prepRef = useRef(null);
   const collRef = useRef(null);
+
   useEffect(() => {
     const fetchLiveOrders = () => {
       fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
@@ -41,8 +42,27 @@ export default function DisplayScreen() {
     return () => clearInterval(scrollTimer);
   }, []);
 
-  const preparingOrders = orders.filter(o => o.status === 'Preparing');
-  const readyOrders = orders.filter(o => o.status === 'Ready').slice(-30); 
+  // 👇 NAYA: Ultra-robust filter jo ek bande ka naam TV par doosri baar aane hi nahi dega 👇
+  const filterUniqueCustomers = (orderList) => {
+    const seenNames = new Set();
+    return orderList.filter(order => {
+      const name = (order.customer_name || '').toLowerCase().trim();
+      if (!name) return true;
+      if (seenNames.has(name)) {
+        return false; // Agar naam pehle aa chuka hai toh is row ko hide kar do
+      }
+      seenNames.add(name);
+      return true;
+    });
+  };
+
+  // Pehle Preparing status filter kiya, fir duplicates clean kiye
+  const rawPreparing = orders.filter(o => o.status === 'Preparing');
+  const preparingOrders = filterUniqueCustomers(rawPreparing);
+
+  // Same logic Ready column ke liye
+  const rawReady = orders.filter(o => o.status === 'Ready');
+  const readyOrders = filterUniqueCustomers(rawReady).slice(-30); 
 
   const formatOrderTime = (dateString) => {
     if (!dateString) return "";
@@ -52,7 +72,6 @@ export default function DisplayScreen() {
   return (
     <div className="display-container">
       
-      {/* LOADING SCREEN */}
       {isLoading && (
         <div className="tv-loading-overlay">
            <div className="tv-loading-spinner"></div>
@@ -66,7 +85,7 @@ export default function DisplayScreen() {
           <div className="grid-row list-header header-prep"><div>Order ID</div><div>Name</div><div style={{ textAlign: 'right' }}>Time</div></div>
           <div className="order-list" ref={prepRef}>
             {preparingOrders.map(o => (
-              <div key={o.id} className="grid-row order-card card-prep">
+              <div key={o.id || o._id} className="grid-row order-card card-prep">
                 <div className="col-id id-prep">#{o.id}</div><div className="col-name name-prep">{o.customer_name}</div><div className="col-time time-prep">{formatOrderTime(o.created_at || o.createdAt || o.date)}</div>
               </div>
             ))}
@@ -79,7 +98,7 @@ export default function DisplayScreen() {
           <div className="grid-row list-header header-coll"><div>Order ID</div><div>Name</div><div style={{ textAlign: 'right' }}>Time</div></div>
           <div className="order-list" ref={collRef}>
             {readyOrders.map(o => (
-              <div key={o.id} className="grid-row order-card card-coll">
+              <div key={o.id || o._id} className="grid-row order-card card-coll">
                 <div className="col-id id-coll">#{o.id}</div><div className="col-name name-coll">{o.customer_name}</div><div className="col-time time-coll">{formatOrderTime(o.created_at || o.createdAt || o.date)}</div>
               </div>
             ))}
