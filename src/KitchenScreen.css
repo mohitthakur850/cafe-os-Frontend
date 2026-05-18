@@ -1,12 +1,18 @@
 /* ==========================================================================
-   KitchenPage.css (Trello-Style Swipeable Layout)
+   KitchenPage.css (Trello-Style Swipeable Layout - 100% Scroll Fixed)
    ========================================================================== */
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Body scroll strictly disable taaki page static rahe */
+}
+
 .kitchen-container {
   background-color: #f0fdfa;
-  height: 100vh; /* Screen ko lock karega taaki body scroll na ho */
+  height: 100vh; /* Complete screen viewport lock */
   padding: 20px;
   font-family: system-ui, -apple-system, sans-serif;
   display: flex;
@@ -23,7 +29,7 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-  flex-shrink: 0;
+  flex-shrink: 0; /* Header apni jagah se hilega nahi */
 }
 
 .kitchen-title {
@@ -44,40 +50,40 @@
   grid-template-columns: repeat(3, 1fr); 
   gap: 25px;
   margin-top: 20px;
-  flex: 1; /* Bachi hui saari jagah le lega */
-  overflow: hidden; /* Bahar ka overflow block */
+  flex: 1; /* Bachi hui poori screen space lega */
+  overflow: hidden; /* Out of viewport leak protection */
 }
 
 .kitchen-column {
   background: #f8fafc;
   border-radius: 16px;
-  padding: 15px 15px 0 15px; /* Bottom padding scroll container mein denge */
+  padding: 15px;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Parent ke barabar height */
+  height: calc(100vh - 120px) !important; /* 🔥 Strict Desktop height lock taaki inner container scroll ho sake */
   border: 1px solid #e2e8f0;
 }
 
 .column-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0;
+  flex-shrink: 0; /* Sticky column title */
 }
 .column-header h3 { margin: 0; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px; }
 .col-count { background: #e2e8f0; color: #475569; padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; }
 
-/* 🔥 THE SCROLL MAGIC (Inner List) 🔥 */
+/* 🔥 THE SCROLL FIX: Strict inner container auto scroll toggle 🔥 */
 .kitchen-grid {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  flex: 1; 
-  overflow-y: auto; /* Card list vertical scroll hogi */
+  flex: 1 !important; 
+  overflow-y: auto !important; /* Forces vertical mouse scroll when full */
   padding-bottom: 20px;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: thin; /* Desktop standard thin scroller visible optionally */
 }
-.kitchen-grid::-webkit-scrollbar { display: none; } /* Chrome */
 
-/* ================= CARDS ================= */
+/* CARDS UNIQUE DESIGN */
 .kitchen-card {
   background-color: white;
   border-radius: 12px;
@@ -86,7 +92,7 @@
   display: flex; flex-direction: column;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid #f1f5f9;
-  flex-shrink: 0; /* Card ko dabne se rokega */
+  flex-shrink: 0; /* Prevents compression of cards when loaded */
 }
 .kitchen-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
 
@@ -111,18 +117,20 @@
 .kitchen-btn { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .kitchen-btn:active { transform: scale(0.97); }
 
-/* ================= LOADING & EMPTY STATE ================= */
+/* LOADING ENGINE OVERLAYS */
 .kitchen-loading-overlay { position: fixed; inset: 0; background-color: rgba(240,253,250,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
 .kitchen-spinner { width: 60px; height: 60px; border: 6px solid #ccfbf1; border-top-color: #14b8a6; border-radius: 50%; animation: kitchenSpin 1s linear infinite; }
 @keyframes kitchenSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* ================= RESPONSIVE SMARTPHONES (SWIPEABLE) ================= */
+
+/* ==========================================================================
+   📱 STRICT RESPONSIVE SMARTPHONES (TRELLO HORIZONTAL SWIPE)
+   ========================================================================== */
 @media screen and (max-width: 768px) {
   .kitchen-container { padding: 10px 0 0 0; }
   .kitchen-header { margin: 0 15px 15px 15px; padding: 15px; }
   .kitchen-title { font-size: 1.3rem; }
 
-  /* Horizontal Trello Swipe Logic */
   .kitchen-main-grid {
     display: flex !important; 
     flex-direction: row !important;
@@ -137,8 +145,30 @@
   .kitchen-main-grid::-webkit-scrollbar { display: none; }
 
   .kitchen-column {
-    flex: 0 0 88vw !important; /* Screen ka 88% lega, taaki next slide thodi dikhe */
-    height: 100%; 
+    flex: 0 0 88vw !important; 
+    height: calc(100vh - 90px) !important; /* Mobile vertical fallback calculation stretch */
     scroll-snap-align: center; 
   }
+  
+ /* 🔥 THE PERFECT SCROLL FIX: Scrollbar invisible par vertical scroll ON 🔥 */
+.kitchen-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1 !important; 
+  overflow-y: auto !important; /* Mouse wheel aur touch scroll kaam karega */
+  padding-bottom: 20px;
+  
+  /* Chrome, Safari, Opera aur Edge se scrollbar hide karne ke liye */
+  &::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  
+  /* Firefox se scrollbar hide karne ke liye */
+  scrollbar-width: none !important;
+  
+  /* IE aur Edge ke purane versions ke liye */
+  -ms-overflow-style: none !important; 
 }
