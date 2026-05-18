@@ -105,7 +105,16 @@ const AdminPage = () => {
   const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`${API_URL}/products/${id}`); fetchData(); } };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    try { await axios.put(`${API_URL}/orders/${orderId}/status?status=${newStatus}`); } catch { alert('Error updating'); }
+    try {
+      await axios.put(
+        `${API_URL}/orders/${orderId}/status`,
+        { status: newStatus }
+      );
+      fetchData();
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      alert('Error updating order status');
+    }
   };
 
   const getFilteredOrders = () => { 
