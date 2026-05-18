@@ -1,119 +1,134 @@
-/* =========================================
-   AdminPage.css (Responsive Dashboard)
-   ========================================= */
-
-* { box-sizing: border-box; }
-
-.admin-wrapper { 
-  padding: 20px; 
-  width: 100%; 
-  max-width: 100%; 
+/* 🌍 GLOBAL RESET FOR ADMIN PAGE */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f8;
 }
 
-@media (min-width: 768px) { .admin-wrapper { padding: 30px 40px; } }
-@media (min-width: 1200px) { .admin-wrapper { padding: 40px 60px; } }
-
-/* ================= GRIDS & LAYOUTS ================= */
-.auto-grid { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-  gap: 20px; 
-}
-
-@media (min-width: 1440px) { 
-  .auto-grid { grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; } 
-}
-
-/* ================= HEADER ================= */
+/* 🔝 NAVBAR STYLES */
 .admin-navbar {
-  background-color: #333;
+  background-color: #0f172a;
+  color: white;
   padding: 15px 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: white;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  flex-wrap: wrap;
-  gap: 15px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .admin-nav-right {
   display: flex;
-  gap: 10px;
+  gap: 15px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .nav-btn {
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
   border: none;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
   display: flex;
   align-items: center;
   gap: 8px;
-  white-space: nowrap;
+  font-size: 1rem;
 }
 
-/* ================= ANALYTICS SECTION ================= */
+.nav-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 📦 MAIN WRAPPERS */
+.admin-wrapper {
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 📊 ANALYTICS HEADER (Orders Tab) */
 .analytics-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   flex-wrap: wrap;
-  gap: 15px;
+  gap: 20px;
 }
 
 .analytics-stats {
   display: flex;
-  gap: 15px;
+  gap: 20px;
   align-items: center;
   flex-wrap: wrap;
 }
 
-/* ================= MENU MANAGEMENT TAB ================= */
+/* 🎛️ GRID LAYOUT (For Orders & Stock) */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 25px;
+}
+
+/* 📝 MENU MANAGEMENT LAYOUT (Menu Tab) */
 .menu-layout {
   display: flex;
-  height: calc(100vh - 80px);
+  gap: 40px;
+  padding: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  align-items: flex-start;
 }
 
 .menu-form-section {
-  flex: 1.2;
-  padding: 40px;
-  background-color: white;
-  border-right: 1px solid #ddd;
-  overflow-y: auto;
+  flex: 1;
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 100px; /* Scrolls smoothly with page */
 }
 
 .menu-list-section {
-  flex: 1.8;
-  padding: 40px;
-  overflow-y: auto;
+  flex: 1.5;
 }
 
-/* ================= SMARTPHONE (MOBILE) RESPONSIVENESS ================= */
-@media screen and (max-width: 768px) {
-  /* Fix Header */
-  .admin-navbar { flex-direction: column; align-items: flex-start; padding: 15px 20px; }
-  .admin-nav-right { width: 100%; justify-content: space-between; }
-  .nav-btn { flex: 1; justify-content: center; padding: 10px; font-size: 0.9rem; }
-  
-  /* Fix Analytics & Orders */
-  .analytics-header { flex-direction: column; align-items: flex-start; margin-bottom: 20px; }
-  .analytics-stats { width: 100%; justify-content: space-between; }
-  
-  /* Fix Menu Management Screen (Make it vertical instead of side-by-side) */
-  .menu-layout { flex-direction: column; height: auto; overflow: visible; }
-  .menu-form-section { border-right: none; border-bottom: 2px solid #ddd; padding: 20px; }
-  .menu-list-section { padding: 20px; }
-  
-  .admin-wrapper { padding: 15px; }
+/* 🔄 ANIMATIONS */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* ================= ANIMATIONS ================= */
-@keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.login-card { animation: slideDown 0.4s ease-out forwards; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+/* 📱 RESPONSIVE DESIGN (For Tablets & Mobile) */
+@media (max-width: 1024px) {
+  .menu-layout {
+    flex-direction: column;
+  }
+  
+  .menu-form-section {
+    position: static;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .admin-navbar {
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+  }
+
+  .admin-nav-right {
+    justify-content: center;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,183 +1,144 @@
+/* ==========================================================================
+   KitchenPage.css (Trello-Style Swipeable Layout)
+   ========================================================================== */
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 .kitchen-container {
   background-color: #f0fdfa;
-  min-height: 100vh;
+  height: 100vh; /* Screen ko lock karega taaki body scroll na ho */
   padding: 20px;
   font-family: system-ui, -apple-system, sans-serif;
-}
-
-/* ================= LOADING SCREEN ================= */
-.kitchen-loading-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background-color: #f0fdfa; z-index: 9999;
-  display: flex; flex-direction: column;
-  justify-content: center; align-items: center;
-}
-
-.kitchen-spinner {
-  width: 50px; height: 50px;
-  border: 5px solid #cffafe; border-top-color: #0ea5e9;
-  border-radius: 50%; animation: kitchenSpin 1s linear infinite;
-}
-
-.kitchen-loading-text {
-  color: #333; margin-top: 15px; font-size: 1.2rem; letter-spacing: 1px;
-}
-
-@keyframes kitchenSpin { 
-  0% { transform: rotate(0deg); } 
-  100% { transform: rotate(360deg); } 
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; 
 }
 
 /* ================= HEADER ================= */
 .kitchen-header {
   background-color: white;
-  padding: 10px 20px; 
-  border-radius: 8px;
+  padding: 15px 25px; 
+  border-radius: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  flex-shrink: 0;
 }
 
 .kitchen-title {
-  margin: 0; color: #333;
-  font-size: 1.4rem;
-  display: flex; align-items: center; gap: 8px;
+  margin: 0; color: #0f172a;
+  font-size: 1.6rem; font-weight: 900;
+  display: flex; align-items: center; gap: 10px;
 }
 
 .kitchen-active-count {
-  font-size: 1rem; font-weight: bold; color: #555;
+  font-size: 1.1rem; font-weight: bold; color: #64748b;
+  background: #f1f5f9; padding: 8px 15px; border-radius: 30px;
 }
+.kitchen-active-number { color: #dc2626; font-size: 1.3rem; margin-left: 5px; }
 
-.kitchen-active-number { color: #dc2626; }
-
-/* ================= EMPTY STATE ================= */
-.kitchen-empty-state {
-  text-align: center;
-  margin-top: 15vh;
-  display: flex; flex-direction: column;
-  align-items: center;
-  animation: kitchenFadeIn 0.5s ease-out forwards;
-}
-
-@keyframes kitchenFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.kitchen-empty-icon {
-  width: 60px !important; 
-  height: 60px !important;
-  margin-bottom: 12px;
-}
-
-.kitchen-empty-title {
-  font-size: 1.5rem; 
-  color: #64748b; margin: 0 0 5px 0;
-  letter-spacing: -0.5px;
-}
-
-.kitchen-empty-subtitle {
-  font-size: 1rem; color: #94a3b8; font-weight: 500;
-}
-
-/* ================= GRID & CARDS ================= */
-.kitchen-grid {
+/* ================= DESKTOP KANBAN GRID ================= */
+.kitchen-main-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 300px); 
-  gap: 15px; 
-  align-items: start;
-  justify-content: start;
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 25px;
+  margin-top: 20px;
+  flex: 1; /* Bachi hui saari jagah le lega */
+  overflow: hidden; /* Bahar ka overflow block */
 }
 
+.kitchen-column {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 15px 15px 0 15px; /* Bottom padding scroll container mein denge */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Parent ke barabar height */
+  border: 1px solid #e2e8f0;
+}
+
+.column-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0;
+}
+.column-header h3 { margin: 0; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px; }
+.col-count { background: #e2e8f0; color: #475569; padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; }
+
+/* 🔥 THE SCROLL MAGIC (Inner List) 🔥 */
+.kitchen-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  flex: 1; 
+  overflow-y: auto; /* Card list vertical scroll hogi */
+  padding-bottom: 20px;
+  scrollbar-width: none; /* Firefox */
+}
+.kitchen-grid::-webkit-scrollbar { display: none; } /* Chrome */
+
+/* ================= CARDS ================= */
 .kitchen-card {
   background-color: white;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   display: flex; flex-direction: column;
-  transition: opacity 0.2s;
-  width: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #f1f5f9;
+  flex-shrink: 0; /* Card ko dabne se rokega */
 }
+.kitchen-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
 
-.kitchen-card.processing { opacity: 0.6; pointer-events: none; }
+.card-top-bar { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: white; }
+.bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.bg-blue { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.bg-green { background: linear-gradient(135deg, #22c55e, #16a34a); }
 
-.card-top-bar {
-  padding: 10px 15px; 
-  display: flex; justify-content: space-between;
-  align-items: center; color: white;
-}
+.card-order-id { margin: 0; font-size: 1.2rem; font-weight: 900; }
+.card-status-badge { background-color: rgba(255, 255, 255, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; }
 
-.card-order-id {
-  margin: 0; font-size: 1.2rem; font-weight: 900;
-}
+.card-body { padding: 15px; flex: 1; }
+.card-customer { display: flex; align-items: center; gap: 8px; color: #1e293b; font-weight: 900; font-size: 1.1rem; margin-bottom: 12px; border-bottom: 2px dashed #e2e8f0; padding-bottom: 12px; }
 
-.card-status-badge {
-  background-color: rgba(255, 255, 255, 0.3);
-  padding: 3px 10px; border-radius: 12px;
-  font-size: 0.7rem; font-weight: bold;
-  letter-spacing: 0.5px; text-transform: uppercase;
-}
-
-/* ================= CARD BODY ================= */
-.card-body {
-  padding: 15px; 
-  flex: 1;
-}
-
-.card-customer {
-  display: flex; align-items: center; gap: 8px;
-  color: #1f2937; font-weight: bold; font-size: 1rem;
-  margin-bottom: 12px; border-bottom: 2px solid #f3f4f6;
-  padding-bottom: 12px;
-}
-
-.item-list {
-  display: flex; flex-direction: column; gap: 8px;
-}
-
-.item-row {
-  display: flex; justify-content: space-between;
-  align-items: flex-start; color: #4b5563;
-  font-size: 0.9rem; font-weight: 600;
-}
-
+.item-list { display: flex; flex-direction: column; gap: 10px; }
+.item-row { display: flex; justify-content: space-between; align-items: flex-start; color: #334155; font-size: 0.95rem; font-weight: 700; }
 .item-name-col { flex: 1; padding-right: 10px; }
+.item-addons { font-size: 0.8rem; color: #94a3b8; font-weight: 600; margin-top: 4px; display: block; }
+.item-qty { background-color: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-weight: 900; color: #0f172a; font-size: 0.9rem; }
 
-.item-addons {
-  font-size: 0.8rem; color: #9ca3af; margin-top: 2px;
-}
+.card-action-box { padding: 0 15px 15px 15px; }
+.kitchen-btn { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.kitchen-btn:active { transform: scale(0.97); }
 
-.item-qty {
-  background-color: #f1f5f9; padding: 2px 8px;
-  border-radius: 6px; font-weight: bold;
-  color: #334155; font-size: 0.8rem;
-}
+/* ================= LOADING & EMPTY STATE ================= */
+.kitchen-loading-overlay { position: fixed; inset: 0; background-color: rgba(240,253,250,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.kitchen-spinner { width: 60px; height: 60px; border: 6px solid #ccfbf1; border-top-color: #14b8a6; border-radius: 50%; animation: kitchenSpin 1s linear infinite; }
+@keyframes kitchenSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* ================= BUTTONS ================= */
-.card-action-box {
-  padding: 0 15px 15px 15px; 
-}
+/* ================= RESPONSIVE SMARTPHONES (SWIPEABLE) ================= */
+@media screen and (max-width: 768px) {
+  .kitchen-container { padding: 10px 0 0 0; }
+  .kitchen-header { margin: 0 15px 15px 15px; padding: 15px; }
+  .kitchen-title { font-size: 1.3rem; }
 
-.kitchen-btn {
-  width: 100%; padding: 10px; 
-  color: white; border: none; border-radius: 6px;
-  font-size: 0.95rem; font-weight: bold;
-  cursor: pointer; transition: all 0.2s;
-}
-
-/* ================= RESPONSIVE DESIGN FOR SMARTPHONES ================= */
-@media screen and (max-width: 600px) {
-  .kitchen-container { padding: 10px; }
-  .kitchen-grid { 
-    grid-template-columns: 1fr; 
+  /* Horizontal Trello Swipe Logic */
+  .kitchen-main-grid {
+    display: flex !important; 
+    flex-direction: row !important;
+    overflow-x: auto !important; 
+    overflow-y: hidden !important;
+    gap: 15px; 
+    padding: 0 15px 20px 15px !important;
+    scroll-snap-type: x mandatory; 
+    scrollbar-width: none;
+    margin-top: 0;
   }
-  .kitchen-header { padding: 10px; }
-  .kitchen-title { font-size: 1.2rem; }
+  .kitchen-main-grid::-webkit-scrollbar { display: none; }
+
+  .kitchen-column {
+    flex: 0 0 88vw !important; /* Screen ka 88% lega, taaki next slide thodi dikhe */
+    height: 100%; 
+    scroll-snap-align: center; 
+  }
 }

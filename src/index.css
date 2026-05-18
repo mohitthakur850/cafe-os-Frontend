@@ -7,8 +7,8 @@
 }
 
 body {
-  font-family: sans-serif; /* Ya aapka koi custom font */
-  overflow-x: hidden; /* Screen ke bahar jane se rokne ke liye */
+  font-family: sans-serif;
+  overflow-x: hidden;
 }
 :root {
   --bg-color: #fdfaf6; 
@@ -244,5 +244,5 @@ th { background-color: #f8f9fa; color: var(--text-light); font-weight: 600; }
 
 body, html {
   width: 100%;
-  overflow-x: hidden; /* Yeh mobile par horizontal scroll (left-right hilne) ko rokta hai */
+  overflow-x: hidden;
 }

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client'; // ⚡ Live Sync Import
 import './AdminPage.css';
+
+const API_URL = 'https://cafe-os-backend.onrender.com';
 
 const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,13 +33,15 @@ const AdminPage = () => {
   const [image, setImage] = useState('');
   const [price, setPrice] = useState('');
   const [addons, setAddons] = useState([{ name: '', price: '' }]);
+  const [selectionType, setSelectionType] = useState('Multiple'); // Naya Feature
+
   const [newCatName, setNewCatName] = useState('');
   const [newCatImg, setNewCatImg] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://cafe-os-backend-production.up.railway.app/admin/login', { username: usernameInput, password: passwordInput });
+      const res = await axios.post(`${API_URL}/admin/login`, { username: usernameInput, password: passwordInput });
       if (res.data.success) { setIsAuthenticated(true); setLoginError(''); localStorage.setItem('isAdmin', 'true'); setIsLoading(true); }
     } catch { setLoginError('Invalid Username or Password! 🚫'); setPasswordInput(''); }
   };
@@ -45,35 +50,64 @@ const AdminPage = () => {
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return; 
     try {
-      const [pRes, oRes, cRes] = await Promise.all([ axios.get('https://cafe-os-backend-production.up.railway.app/products'), axios.get('https://cafe-os-backend-production.up.railway.app/orders'), axios.get('https://cafe-os-backend-production.up.railway.app/categories') ]);
+      const [pRes, oRes, cRes] = await Promise.all([ axios.get(`${API_URL}/products`), axios.get(`${API_URL}/orders`), axios.get(`${API_URL}/categories`) ]);
       setProducts(pRes.data); setOrders(oRes.data); setCategories(cRes.data);
     } catch (e) { console.error("Error fetching data", e); }
     finally { setIsLoading(false); }
   }, [isAuthenticated]);
 
-  useEffect(() => { fetchData(); const interval = setInterval(() => fetchData(), 5000); return () => clearInterval(interval); }, [fetchData]);
+  // ⚡ Live WebSocket Engine (No more setInterval)
+  useEffect(() => { 
+    fetchData(); 
+    
+    const socket = io(API_URL, { transports: ['websocket'] });
+    socket.on('orderUpdated', () => {
+      console.log("🔥 Admin Live Update!");
+      if (isAuthenticated) fetchData(); 
+    });
 
-  const toggleStock = async (product) => { try { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch { alert('Error updating stock'); } };
+    return () => socket.disconnect(); 
+  }, [fetchData, isAuthenticated]);
+
+  const toggleStock = async (product) => { try { await axios.put(`${API_URL}/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch { alert('Error updating stock'); } };
   const handleImageUpload = (e, setImageState) => { const file = e.target.files[0]; if (file) { if (file.size > 2000000) return alert("File size should be less than 2MB."); const reader = new FileReader(); reader.onloadend = () => setImageState(reader.result); reader.readAsDataURL(file); } };
   const handleEditCategoryClick = (c) => { setEditingCatId(c._id); setNewCatName(c.name); setNewCatImg(c.image || ''); window.scrollTo(0, 0); };
   const cancelCategoryEdit = () => { setEditingCatId(null); setNewCatName(''); setNewCatImg(''); };
-  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/categories', { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch { alert("Error saving category."); } };
+  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`${API_URL}/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post(`${API_URL}/categories`, { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch { alert("Error saving category."); } };
   
   const handleAddonChange = (index, field, value) => { const newAddons = [...addons]; newAddons[index][field] = value; setAddons(newAddons); };
   const addAddonRow = () => setAddons([...addons, { name: '', price: '' }]);
   const removeAddonRow = (index) => setAddons(addons.filter((_, i) => i !== index));
-  const handleEditClick = (p) => { setEditingId(p._id); setName(p.name); setCategory(p.category); setSubCategory(p.subCategory || ''); setDescription(p.description || ''); setImage(p.image || ''); setPrice(p.price); setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); window.scrollTo(0, 0); };
   
-  const handleSaveProduct = async (e) => { e.preventDefault(); const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name) }; try { if (editingId) { await axios.put(`https://cafe-os-backend-production.up.railway.app/products/${editingId}`, data); } else { await axios.post('https://cafe-os-backend-production.up.railway.app/products', data); } setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); fetchData(); } catch { alert('Error saving product'); } };
+  const handleEditClick = (p) => { 
+    setEditingId(p._id); 
+    setName(p.name); 
+    setCategory(p.category); 
+    setSubCategory(p.subCategory || ''); 
+    setDescription(p.description || ''); 
+    setImage(p.image || ''); 
+    setPrice(p.price); 
+    setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); 
+    setSelectionType(p.selectionType || 'Multiple');
+    window.scrollTo(0, 0); 
+  };
   
-  const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`https://cafe-os-backend-production.up.railway.app/products/${id}`); fetchData(); } };
+  const handleSaveProduct = async (e) => { 
+    e.preventDefault(); 
+    const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name), selectionType }; 
+    try { 
+      if (editingId) { await axios.put(`${API_URL}/products/${editingId}`, data); } 
+      else { await axios.post(`${API_URL}/products`, data); } 
+      setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); setSelectionType('Multiple'); fetchData(); 
+    } catch { alert('Error saving product'); } 
+  };
+  
+  const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`${API_URL}/products/${id}`); fetchData(); } };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-    setOrders(prevOrders => prevOrders.map(order => (order.id === orderId || order._id === orderId) ? { ...order, status: newStatus } : order));
-    try { await axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${orderId}/status?status=${newStatus}`); } catch { fetchData(); }
+    try { await axios.put(`${API_URL}/orders/${orderId}/status?status=${newStatus}`); } catch { alert('Error updating'); }
   };
 
-  // ✅ UPDATED FILTER LOGIC: Today, Yesterday, Last 30 Days, Last Month, Custom Range
   const getFilteredOrders = () => { 
     const today = new Date(); 
     
@@ -97,16 +131,10 @@ const AdminPage = () => {
       
       if (orderFilter === 'Custom Range') {
         if (!startDate || !endDate) return true; 
-        
-        const sDate = new Date(startDate);
-        sDate.setHours(0, 0, 0, 0);
-        
-        const eDate = new Date(endDate);
-        eDate.setHours(23, 59, 59, 999);
-        
+        const sDate = new Date(startDate); sDate.setHours(0, 0, 0, 0);
+        const eDate = new Date(endDate); eDate.setHours(23, 59, 59, 999);
         return orderDate >= sDate && orderDate <= eDate;
       }
-
       return true; 
     }); 
   };
@@ -247,19 +275,27 @@ const AdminPage = () => {
                 {newCatImg && <img src={newCatImg} alt="Preview" style={{height: '60px', width: '100px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #ccc'}} />}
                 <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}><button onClick={handleSaveCategory} style={{...btnStyle, flex: 1, backgroundColor: editingCatId ? '#0ea5e9' : '#333'}}>{editingCatId ? "Update Category" : "Add Category"}</button>{editingCatId && <button onClick={cancelCategoryEdit} style={{...btnStyle, flex: 1, backgroundColor: '#888'}}>Cancel</button>}</div>
               </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>{categories.map(c => (<div key={c._id} style={{ padding: '5px 5px 5px 15px', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>{c.name} <button onClick={() => handleEditCategoryClick(c)} style={{ border: 'none', color: '#0ea5e9', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>✎ Edit</button><button onClick={async () => { await axios.delete(`https://cafe-os-backend-production.up.railway.app/categories/${c._id}`); fetchData(); }} style={{ border: 'none', color: 'red', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 8px' }}>×</button></div>))}</div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>{categories.map(c => (<div key={c._id} style={{ padding: '5px 5px 5px 15px', background: '#f1f5f9', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>{c.name} <button onClick={() => handleEditCategoryClick(c)} style={{ border: 'none', color: '#0ea5e9', background: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}>✎ Edit</button><button onClick={async () => { await axios.delete(`${API_URL}/categories/${c._id}`); fetchData(); }} style={{ border: 'none', color: 'red', background: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: '0 8px' }}>×</button></div>))}</div>
             </div>
             <h2 style={{ margin: '0 0 20px 0', color: '#333' }}>{editingId ? "📝 Edit Menu Item" : "➕ Add New Menu Item"}</h2>
             <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
                 <div><label style={labelStyle}>Item Name *</label><input required value={name} onChange={e => setName(e.target.value)} style={inputStyle} /></div><div><label style={labelStyle}>Main Category *</label><select required value={category} onChange={e => setCategory(e.target.value)} style={inputStyle}><option value="">Select Category</option>{categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}</select></div>
                 <div><label style={labelStyle}>Price (₹) *</label><input required type="number" value={price} onChange={e => setPrice(e.target.value)} style={inputStyle} /></div><div><label style={labelStyle}>Sub Category</label><input value={subCategory} onChange={e => setSubCategory(e.target.value)} style={inputStyle} /></div>
+                
+                <div>
+                  <label style={labelStyle}>Add-on Selection</label>
+                  <select value={selectionType} onChange={e => setSelectionType(e.target.value)} style={inputStyle}>
+                    <option value="Multiple">Multiple (Checkboxes)</option>
+                    <option value="Single">Single (Radio Button)</option>
+                  </select>
+                </div>
               </div>
               <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}><label style={labelStyle}>Item Image</label><div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}><div style={{ flex: 1, minWidth: '200px' }}><input placeholder="Paste Image URL" value={image} onChange={e => setImage(e.target.value)} style={{...inputStyle, marginBottom: '10px'}} /><div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{fontWeight: 'bold', color: '#888'}}>OR</span><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setImage)} style={{flex: 1, padding: '5px', fontSize: '0.9rem'}} /></div></div>{image ? (<img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #ccc' }} />) : (<div style={{ width: '80px', height: '80px', backgroundColor: '#eaeaea', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>No Image</div>)}</div></div>
               <div><label style={labelStyle}>Description</label><textarea rows="2" value={description} onChange={e => setDescription(e.target.value)} style={inputStyle} /></div>
               <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><label style={labelStyle}>Add-ons (Optional)</label><button type="button" onClick={addAddonRow} style={{...btnStyle, padding: '5px 10px', fontSize: '0.8rem', backgroundColor: '#333'}}>+ Add Row</button></div>{addons.map((addon, index) => (<div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}><input placeholder="Addon Name" value={addon.name} onChange={e => handleAddonChange(index, 'name', e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 2 }} /><input type="number" placeholder="Price" value={addon.price} onChange={e => handleAddonChange(index, 'price', e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />{addons.length > 1 && <button type="button" onClick={() => removeAddonRow(index)} style={{ padding: '0 15px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✖</button>}</div>))}</div>
               <button type="submit" style={{ padding: '15px', backgroundColor: editingId ? '#0ea5e9' : '#f472b6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>{editingId ? "Update Item" : "Save to Menu"}</button>
-              {editingId && <button type="button" onClick={() => {setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]);}} style={{background:'none', border:'none', color:'#888', cursor:'pointer', marginTop:'10px'}}>Cancel Edit</button>}
+              {editingId && <button type="button" onClick={() => {setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); setSelectionType('Multiple');}} style={{background:'none', border:'none', color:'#888', cursor:'pointer', marginTop:'10px'}}>Cancel Edit</button>}
             </form>
           </div>
           <div className="menu-list-section">
@@ -267,7 +303,7 @@ const AdminPage = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {products.map(p => (
                 <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)', flexWrap: 'wrap', gap: '10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src={p.image || 'https://via.placeholder.com/50'} alt="Item" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} /><div><h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 0}</span></h4><div style={{ fontSize: '0.85rem', color: '#888' }}><strong>{p.category}</strong> {p.subCategory && `> ${p.subCategory}`}</div></div></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src={p.image || 'https://via.placeholder.com/50'} alt="Item" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} /><div><h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 0}</span></h4><div style={{ fontSize: '0.85rem', color: '#888' }}><strong>{p.category}</strong> {p.subCategory && `> ${p.subCategory}`} {p.selectionType === 'Single' && <span style={{backgroundColor: '#e0f2fe', color: '#0284c7', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px', fontSize: '0.75rem'}}>Single Select</span>}</div></div></div>
                   <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                     <button onClick={() => handleEditClick(p)} style={{ background: 'none', border: 'none', color: '#0ea5e9', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Modify</button>
                     <button onClick={() => handleDeleteProduct(p._id || p.id)} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Delete</button>

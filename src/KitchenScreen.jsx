@@ -1,18 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import './KitchenScreen.css';
 
-const KitchenScreen = () => {
+// 👇 Tera naya Render wala Backend URL
+const API_URL = 'https://cafe-os-backend.onrender.com';
+
+export default function KitchenPage() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [processingId, setProcessingId] = useState(null);
+  
+  // 🔥 Yeh naya state track karega ki kaunsa order abhi update ho raha hai
+  const [updatingOrders, setUpdatingOrders] = useState([]); 
 
   const fetchOrders = async () => {
     try {
-      const res = await axios.get('https://cafe-os-backend-production.up.railway.app/orders');
+      const res = await axios.get(`${API_URL}/orders?t=${Date.now()}`);
       setOrders(res.data);
     } catch (err) {
-      console.error("Error fetching orders", err);
+      console.error("Error fetching kitchen orders:", err);
     } finally {
       setIsLoading(false);
     }
@@ -20,181 +26,223 @@ const KitchenScreen = () => {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(() => fetchOrders(), 3000); 
-    return () => clearInterval(interval);
+    const socket = io(API_URL, { transports: ['websocket'] });
+    
+    socket.on('orderUpdated', () => {
+      console.log('⚡ New Order Update Received in Kitchen!');
+      fetchOrders();
+    });
+
+    const interval = setInterval(fetchOrders, 30000);
+    return () => { clearInterval(interval); socket.disconnect(); };
   }, []);
 
-  // 👇 NAYA: Ek se zyada IDs ko ek saath update karne ke liye Promise.all lagaya 👇
-  const updateOrderStatus = async (ids, newStatus) => {
-    // Check karte hain ki single ID hai ya array, fir sabko array bana lete hain
-    const idArray = Array.isArray(ids) ? ids : [ids];
-    setProcessingId(idArray[0]); 
+  // 🔥 Smart Update Function (With Loading Lock)
+  const updateStatus = async (id, status) => {
+    setUpdatingOrders(prev => [...prev, id]); // Button ko 'Updating...' state mein daalo
+
     try {
-      // Saare grouped orders ko backend me ek saath parallel update karega
-      await Promise.all(
-        idArray.map(id => 
-          axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=${newStatus}`)
-        )
-      );
-      await fetchOrders(); 
-    } catch {
-      alert('Error updating status');
+      await axios.put(`${API_URL}/orders/${id}/status?status=${status}`);
+      await fetchOrders(); // Naya data laao
+    } catch (err) {
+      console.error("Error updating status:", err);
     } finally {
-      setProcessingId(null); 
+      setUpdatingOrders(prev => prev.filter(orderId => orderId !== id)); // Button normal kar do
     }
   };
 
-  // 👇 NAYA: Hand Over button ke liye bhi same multi-ID logic 👇
-  const handleCompleteOrder = async (ids) => {
-    const idArray = Array.isArray(ids) ? ids : [ids];
-    setProcessingId(idArray[0]); 
-    try {
-      await Promise.all(
-        idArray.map(id => 
-          axios.put(`https://cafe-os-backend-production.up.railway.app/orders/${id}/status?status=Completed`)
-        )
-      );
-      await fetchOrders();
-    } catch {
-      alert('Error completing order');
-    } finally {
-      setProcessingId(null); 
-    }
-  };
+  // 🔥 THE MAGIC CODE: Auto-merges duplicate items inside a ticket 🔥
+  const groupIdenticalItems = (items) => {
+    const grouped = {};
+    items.forEach(item => {
+      // Create a unique identifier for the item based on name + addons
+      const addonStr = item.addons && item.addons.length > 0 
+        ? item.addons.map(a => a.name).sort().join(',') 
+        : 'no-addons';
+      const key = `${item.name}|${addonStr}`;
 
-  const activeOrders = orders.filter(o => o.status === 'Accepted' || o.status === 'Preparing' || o.status === 'Ready');
-
-  // 👇 NAYA: Grouping me hum saare merged order IDs ko ek array (allTargetIds) me store kar lete hain 👇
-  const groupedOrders = activeOrders.reduce((acc, currentOrder) => {
-    const existingGroup = acc.find(group => 
-      group.customer_name?.toLowerCase().trim() === currentOrder.customer_name?.toLowerCase().trim() &&
-      group.status === currentOrder.status
-    );
-
-    const currentItems = currentOrder.items && currentOrder.items.length > 0 
-      ? currentOrder.items 
-      : [{ 
-          name: currentOrder.name || 'Item', 
-          quantity: currentOrder.quantity || 1, 
-          addons: currentOrder.addons || [],
-          itemTotal: currentOrder.itemTotal || currentOrder.price || 0 
-        }];
-
-    const currentOrderId = currentOrder._id || currentOrder.id;
-
-    if (existingGroup) {
-      existingGroup.items = [...existingGroup.items, ...currentItems];
-      // Agar naya ID hai toh use bhi allTargetIds me daal dete hain
-      if (currentOrderId && !existingGroup.allTargetIds.includes(currentOrderId)) {
-        existingGroup.allTargetIds.push(currentOrderId);
+      if (grouped[key]) {
+        grouped[key].quantity += (item.quantity || 1);
+      } else {
+        grouped[key] = { ...item, quantity: item.quantity || 1 };
       }
-    } else {
-      acc.push({
-        ...currentOrder,
-        items: [...currentItems],
-        primaryTargetId: currentOrderId,
-        // Shuruat me pehli ID ko array me save kiya
-        allTargetIds: currentOrderId ? [currentOrderId] : []
-      });
-    }
+    });
+    return Object.values(grouped);
+  };
 
-    return acc;
-  }, []);
+  // Organize Orders
+  const newOrders = orders.filter(o => o.status === 'Accepted').sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const prepOrders = orders.filter(o => o.status === 'Preparing').sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const readyOrders = orders.filter(o => o.status === 'Ready').sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 20);
+
+  const activeCount = newOrders.length + prepOrders.length;
 
   return (
     <div className="kitchen-container">
-      
       {isLoading && (
         <div className="kitchen-loading-overlay">
-           <div className="kitchen-spinner"></div>
-           <h2 className="kitchen-loading-text">Loading Orders... 👨‍🍳</h2>
+          <div className="kitchen-spinner"></div>
+          <h2 style={{color:'#0f172a', marginTop: '20px'}}>Syncing Kitchen... 👨‍🍳</h2>
         </div>
       )}
 
-      <div className="kitchen-header">
-        <h1 className="kitchen-title">Kitchen Orders 👨‍🍳</h1>
+      <header className="kitchen-header">
+        <h1 className="kitchen-title">👨‍🍳 Kitchen KDS</h1>
         <div className="kitchen-active-count">
-          Active: <span className="kitchen-active-number">{groupedOrders.length}</span>
+          Active Tickets: <span className="kitchen-active-number">{activeCount}</span>
         </div>
-      </div>
+      </header>
 
-      {!isLoading && groupedOrders.length === 0 ? (
-        <div className="kitchen-empty-state">
-          <svg className="kitchen-empty-icon" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"></path>
-            <line x1="6" y1="17" x2="18" y2="17"></line>
-          </svg>
-          <h2 className="kitchen-empty-title">Kitchen is Clear! ✨</h2>
-          <p className="kitchen-empty-subtitle">Waiting for new orders to arrive...</p>
-        </div>
-      ) : (
-        <div className="kitchen-grid">
-          {groupedOrders.map((orderGroup) => {
-            const isAccepted = orderGroup.status === 'Accepted';
-            const isPreparing = orderGroup.status === 'Preparing';
-            
-            let headerColor, btnColor, btnText, action;
-            // Hum is group ke saare IDs pass karenge action me
-            const targetIds = orderGroup.allTargetIds;
-            const isProcessing = processingId === orderGroup.primaryTargetId;
+      <main className="kitchen-main-grid">
+        
+        {/* ================= COLUMN 1: NEW ORDERS ================= */}
+        <section className="kitchen-column">
+          <div className="column-header">
+            <h3>🚨 New Orders</h3>
+            <span className="col-count">{newOrders.length}</span>
+          </div>
+          <div className="kitchen-grid">
+            {newOrders.map(order => {
+              const orderId = order._id || order.id;
+              const isUpdating = updatingOrders.includes(orderId);
 
-            if (isAccepted) { 
-              headerColor = '#f5a623'; btnColor = '#0ea5e9'; btnText = '🔥 Start Preparing'; 
-              action = () => updateOrderStatus(targetIds, 'Preparing'); 
-            } else if (isPreparing) { 
-              headerColor = '#2196f3'; btnColor = '#22c55e'; btnText = '✓ Mark as Ready'; 
-              action = () => updateOrderStatus(targetIds, 'Ready'); 
-            } else { 
-              headerColor = '#22c55e'; btnColor = '#e74c3c'; btnText = '🤝 Hand Over'; 
-              action = () => handleCompleteOrder(targetIds); 
-            }
-
-            return (
-              <div key={orderGroup.primaryTargetId} className={`kitchen-card ${isProcessing ? 'processing' : ''}`}>
-                
-                <div className="card-top-bar" style={{ backgroundColor: headerColor }}>
-                  <h2 className="card-order-id">#{orderGroup.id}</h2>
-                  <span className="card-status-badge">{orderGroup.status}</span>
-                </div>
-                
-                <div className="card-body">
-                  <div className="card-customer">👤 {orderGroup.customer_name}</div>
-                  <div className="item-list">
-                    {orderGroup.items.map((item, i) => (
-                      <div key={i} className="item-row">
-                        <div className="item-name-col">
-                          {item.name}
-                          {item.addons && item.addons.length > 0 && (
-                            <div className="item-addons">+ {item.addons.map(a => a.name).join(', ')}</div>
-                          )}
+              return (
+                <div key={orderId} className="kitchen-card">
+                  <div className="card-top-bar bg-orange">
+                    <h3 className="card-order-id">#{order.id}</h3>
+                    <span className="card-status-badge">New</span>
+                  </div>
+                  <div className="card-body">
+                    <div className="card-customer">👤 {order.customer_name}</div>
+                    <div className="item-list">
+                      {groupIdenticalItems(order.items).map((item, idx) => (
+                        <div key={idx} className="item-row">
+                          <div className="item-name-col">
+                            {item.name}
+                            {item.addons && item.addons.length > 0 && (
+                              <span className="item-addons">+ {item.addons.map(a => a.name).join(', ')}</span>
+                            )}
+                          </div>
+                          <div className="item-qty">x{item.quantity}</div>
                         </div>
-                        <span className="item-qty">x{item.quantity || 1}</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                  <div className="card-action-box">
+                    <button 
+                      className="kitchen-btn" 
+                      style={{ backgroundColor: isUpdating ? '#94a3b8' : '#0ea5e9', cursor: isUpdating ? 'not-allowed' : 'pointer' }}
+                      disabled={isUpdating}
+                      onClick={() => updateStatus(orderId, 'Preparing')}
+                    >
+                      {isUpdating ? '⏳ Updating...' : '🔥 Start Preparing'}
+                    </button>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </section>
 
-                <div className="card-action-box">
-                  <button 
-                    className="kitchen-btn"
-                    onClick={action}
-                    disabled={isProcessing}
-                    style={{ 
-                      backgroundColor: isProcessing ? '#9ca3af' : btnColor, 
-                      boxShadow: isProcessing ? 'none' : `0 4px 10px ${btnColor}40` 
-                    }}
-                  >
-                    {isProcessing ? '⏳ Updating...' : btnText}
-                  </button>
+        {/* ================= COLUMN 2: PREPARING ================= */}
+        <section className="kitchen-column">
+          <div className="column-header">
+            <h3>🔥 Preparing</h3>
+            <span className="col-count">{prepOrders.length}</span>
+          </div>
+          <div className="kitchen-grid">
+            {prepOrders.map(order => {
+              const orderId = order._id || order.id;
+              const isUpdating = updatingOrders.includes(orderId);
+
+              return (
+                <div key={orderId} className="kitchen-card">
+                  <div className="card-top-bar bg-blue">
+                    <h3 className="card-order-id">#{order.id}</h3>
+                    <span className="card-status-badge">Cooking</span>
+                  </div>
+                  <div className="card-body">
+                    <div className="card-customer">👤 {order.customer_name}</div>
+                    <div className="item-list">
+                      {groupIdenticalItems(order.items).map((item, idx) => (
+                        <div key={idx} className="item-row">
+                          <div className="item-name-col">
+                            {item.name}
+                            {item.addons && item.addons.length > 0 && (
+                              <span className="item-addons">+ {item.addons.map(a => a.name).join(', ')}</span>
+                            )}
+                          </div>
+                          <div className="item-qty">x{item.quantity}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="card-action-box">
+                    <button 
+                      className="kitchen-btn" 
+                      style={{ backgroundColor: isUpdating ? '#94a3b8' : '#22c55e', cursor: isUpdating ? 'not-allowed' : 'pointer' }}
+                      disabled={isUpdating}
+                      onClick={() => updateStatus(orderId, 'Ready')}
+                    >
+                      {isUpdating ? '⏳ Updating...' : '✅ Mark as Ready'}
+                    </button>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        </section>
 
-              </div>
-            );
-          })}
-        </div>
-      )}
+        {/* ================= COLUMN 3: READY TO HANDOVER ================= */}
+        <section className="kitchen-column">
+          <div className="column-header">
+            <h3>✅ Ready to Handover</h3>
+            <span className="col-count">{readyOrders.length}</span>
+          </div>
+          <div className="kitchen-grid">
+            {readyOrders.map(order => {
+              const orderId = order._id || order.id;
+              const isUpdating = updatingOrders.includes(orderId);
+
+              return (
+                <div key={orderId} className="kitchen-card">
+                  <div className="card-top-bar bg-green">
+                    <h3 className="card-order-id">#{order.id}</h3>
+                    <span className="card-status-badge">DONE</span>
+                  </div>
+                  <div className="card-body">
+                    <div className="card-customer">👤 {order.customer_name}</div>
+                    <div className="item-list">
+                      {groupIdenticalItems(order.items).map((item, idx) => (
+                        <div key={idx} className="item-row">
+                          <div className="item-name-col">
+                            {item.name}
+                            {item.addons && item.addons.length > 0 && (
+                              <span className="item-addons">+ {item.addons.map(a => a.name).join(', ')}</span>
+                            )}
+                          </div>
+                          <div className="item-qty">x{item.quantity}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="card-action-box">
+                    <button 
+                      className="kitchen-btn" 
+                      style={{ backgroundColor: isUpdating ? '#94a3b8' : '#ef4444', cursor: isUpdating ? 'not-allowed' : 'pointer' }}
+                      disabled={isUpdating}
+                      onClick={() => updateStatus(orderId, 'Completed')} // Backend mein 'Completed' bhejna
+                    >
+                      {isUpdating ? '⏳ Updating...' : '🤝 Hand Over'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+      </main>
     </div>
   );
-};
-
-export default KitchenScreen;
+}
