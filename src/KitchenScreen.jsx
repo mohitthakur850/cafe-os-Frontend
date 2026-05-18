@@ -10,6 +10,7 @@ import './KitchenScreen.css';
 
 // Backend URL
 const API_URL = 'https://cafe-os-backend.onrender.com';
+const BUILD_MARKER = 'KDS-2026-05-18-v3';
 
 const getOrderKey = (order) =>
   String(order._id || order.id);
@@ -22,6 +23,7 @@ export default function KitchenPage() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingOrders, setUpdatingOrders] = useState([]);
+  const [errorMessage, setErrorMessage] = useState('');
   const pendingStatusRef = useRef(new Map());
 
   const applyPendingStatuses = useCallback(
@@ -115,6 +117,17 @@ export default function KitchenPage() {
     const orderKey = getOrderKey(order);
     const requestId = getOrderRequestId(order);
 
+    setErrorMessage('');
+    console.log(
+      'KDS status update',
+      {
+        orderId: order.id,
+        requestId,
+        status,
+        build: BUILD_MARKER
+      }
+    );
+
     pendingStatusRef.current.set(
       orderKey,
       status
@@ -151,6 +164,11 @@ export default function KitchenPage() {
       const res = await axios.put(
         `${API_URL}/orders/${encodeURIComponent(requestId)}/status?status=${encodeURIComponent(status)}`,
         { status }
+      );
+
+      console.log(
+        'KDS status response',
+        res.data
       );
 
       if (!res.data) {
@@ -199,6 +217,10 @@ export default function KitchenPage() {
       console.error(
         'Error updating status:',
         err
+      );
+
+      setErrorMessage(
+        `Update failed for #${order.id}. Check backend deploy/API.`
       );
 
       await fetchOrders();
@@ -328,6 +350,12 @@ export default function KitchenPage() {
           👨‍🍳 Kitchen KDS
         </h1>
 
+        <div className="kitchen-header-right">
+
+        <span className="kitchen-build-marker">
+          {BUILD_MARKER}
+        </span>
+
         <div className="kitchen-active-count">
 
           Active Tickets:
@@ -338,7 +366,17 @@ export default function KitchenPage() {
 
         </div>
 
+        </div>
+
       </header>
+
+      {errorMessage && (
+
+        <div className="kitchen-error-banner">
+          {errorMessage}
+        </div>
+
+      )}
 
       {/* MAIN GRID */}
 

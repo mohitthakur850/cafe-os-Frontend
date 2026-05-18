@@ -8,57 +8,48 @@ export default function DisplayScreen() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // 3 Refs for 3 Columns Auto-Scrolling
   const pendRef = useRef(null);
   const prepRef = useRef(null);
   const collRef = useRef(null);
 
-  const fetchLiveOrders = (isSilent = false) => {
-    if (!isSilent) setIsLoading(true);
-    fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
-        setOrders(data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error("Live Update Error:", err);
-        setIsLoading(false);
-      });
-  };
-
+  // 🔄 Live Fetching Engine with WebSockets
   useEffect(() => {
-    // 1. Initial Load
+    const fetchLiveOrders = (isSilent = false) => {
+      if (!isSilent) setIsLoading(true);
+      fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
+        .then(res => res.json())
+        .then(data => {
+          setOrders(data);
+          setIsLoading(false);
+        })
+        .catch(err => {
+          console.error("Live Update Error:", err);
+          setIsLoading(false);
+        });
+    };
+
     fetchLiveOrders();
 
-    // 2. ⚡ WEBSOCKET CONNECTION
+    // ⚡ WEBSOCKET CONNECTION
     const socket = io(API_URL, { transports: ['websocket'] });
     socket.on('orderUpdated', () => {
-      console.log("🔥 Live TV Screen Auto-Refreshing Now via Socket!");
-      fetchLiveOrders(true); // Silent update without flash loader
+      console.log("🔥 Live TV Update Received!");
+      fetchLiveOrders(true); 
     });
 
-    // 3. 🛡️ SMART FALLBACK REFRESH (Har 5 second mein backup pull)
-    const backupInterval = setInterval(() => {
-      fetchLiveOrders(true); // Silent background check
-    }, 5000);
-
-    return () => {
-      socket.disconnect();
-      clearInterval(backupInterval);
-    };
+    return () => socket.disconnect();
   }, []);
 
-  // 📜 SMART AUTO-SCROLL ENGINE
+  // 📜 Auto-Scroll Engine for TV Screen
   useEffect(() => {
     const autoScroll = (ref) => {
       if (ref.current) {
         const { scrollTop, scrollHeight, clientHeight } = ref.current;
-        if (scrollHeight > clientHeight) {
-          if (scrollTop + clientHeight >= scrollHeight - 8) {
-            ref.current.scrollTo({ top: 0, behavior: 'smooth' });
-          } else {
-            ref.current.scrollBy({ top: 80, behavior: 'smooth' });
-          }
+        if (scrollTop + clientHeight >= scrollHeight - 5) {
+          ref.current.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          ref.current.scrollBy({ top: 120, behavior: 'smooth' });
         }
       }
     };
@@ -67,25 +58,30 @@ export default function DisplayScreen() {
       autoScroll(pendRef);
       autoScroll(prepRef); 
       autoScroll(collRef); 
-    }, 3500);
-    
+    }, 3000);
     return () => clearInterval(scrollTimer);
-  }, [orders]);
+  }, []);
+
+  // 🛡️ FILTERING LOGIC FOR 3 COLUMNS (Added Duplicate ID Remover)
+  const getOrderTimestamp = (order) => {
+    const dateValue = order.createdAt || order.created_at || order.date;
+    return dateValue ? new Date(dateValue).getTime() : 0;
+  };
 
   const pendingOrders = orders
     .filter(o => o.status === 'Accepted')
-    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
-    .sort((a, b) => new Date(a.createdAt || a.created_at || Date.now()) - new Date(b.createdAt || b.created_at || Date.now()));
+    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) // 🔥 Duplicate Fix
+    .sort((a, b) => getOrderTimestamp(a) - getOrderTimestamp(b));
 
   const preparingOrders = orders
     .filter(o => o.status === 'Preparing')
-    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
-    .sort((a, b) => new Date(a.createdAt || a.created_at || Date.now()) - new Date(b.createdAt || b.created_at || Date.now()));
+    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) // 🔥 Duplicate Fix
+    .sort((a, b) => getOrderTimestamp(a) - getOrderTimestamp(b));
 
   const readyOrders = orders
     .filter(o => o.status === 'Ready')
-    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
-    .sort((a, b) => new Date(b.createdAt || b.created_at || Date.now()) - new Date(a.createdAt || a.created_at || Date.now())) 
+    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) // 🔥 Duplicate Fix
+    .sort((a, b) => getOrderTimestamp(b) - getOrderTimestamp(a)) 
     .slice(0, 30); 
 
   const formatOrderTime = (dateString) => {
@@ -95,6 +91,7 @@ export default function DisplayScreen() {
 
   return (
     <div className="display-container">
+      
       {isLoading && (
         <div className="tv-loading-overlay">
           <div className="tv-loading-spinner"></div>
@@ -103,7 +100,8 @@ export default function DisplayScreen() {
       )}
 
       <div className="tv-main-content">
-        {/* 1️⃣ PENDING PANEL */}
+        
+        {/* 1️⃣ PENDING (IN QUEUE) PANEL */}
         <div className="panel panel-pending">
           <h1 className="main-heading heading-pend">In Queue</h1>
           <div className="grid-row list-header header-pend">
@@ -111,6 +109,7 @@ export default function DisplayScreen() {
             <div>Name</div>
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
+          
           <div className="order-list" ref={pendRef}>
             {pendingOrders.map(o => (
               <div key={o.id || o._id} className="grid-row order-card card-pend">
@@ -119,7 +118,9 @@ export default function DisplayScreen() {
                 <div className="col-time time-pend">{formatOrderTime(o.createdAt || o.created_at || o.date)}</div>
               </div>
             ))}
-            {pendingOrders.length === 0 && <p className="empty-tv-text">No orders waiting.</p>}
+            {pendingOrders.length === 0 && (
+              <p className="empty-tv-text">No orders waiting.</p>
+            )}
           </div>
         </div>
 
@@ -131,6 +132,7 @@ export default function DisplayScreen() {
             <div>Name</div>
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
+          
           <div className="order-list" ref={prepRef}>
             {preparingOrders.map(o => (
               <div key={o.id || o._id} className="grid-row order-card card-prep">
@@ -139,11 +141,13 @@ export default function DisplayScreen() {
                 <div className="col-time time-prep">{formatOrderTime(o.createdAt || o.created_at || o.date)}</div>
               </div>
             ))}
-            {preparingOrders.length === 0 && <p className="empty-tv-text">No orders preparing right now.</p>}
+            {preparingOrders.length === 0 && (
+              <p className="empty-tv-text">No orders preparing right now.</p>
+            )}
           </div>
         </div>
 
-        {/* 3️⃣ READY PANEL */}
+        {/* 3️⃣ READY TO COLLECT PANEL */}
         <div className="panel panel-collect">
           <h1 className="main-heading heading-coll">Please Collect</h1>
           <div className="grid-row list-header header-coll">
@@ -151,6 +155,7 @@ export default function DisplayScreen() {
             <div>Name</div>
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
+          
           <div className="order-list" ref={collRef}>
             {readyOrders.map(o => (
               <div key={o.id || o._id} className="grid-row order-card card-coll">
@@ -159,11 +164,14 @@ export default function DisplayScreen() {
                 <div className="col-time time-coll">{formatOrderTime(o.createdAt || o.created_at || o.date)}</div>
               </div>
             ))}
-            {readyOrders.length === 0 && <p className="empty-tv-text">All orders collected.</p>}
+            {readyOrders.length === 0 && (
+              <p className="empty-tv-text">All orders collected.</p>
+            )}
           </div>
         </div>
       </div>
       
+      {/* FOOTER MARQUEE */}
       <div className="footer-scroller">
         <div className="marquee">🍔 Welcome to RE:FILL! Freshly prepared, just for you. ☕</div>
       </div>
