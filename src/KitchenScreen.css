@@ -1,23 +1,23 @@
 /* ==========================================================================
-   KitchenPage.css (Trello-Style Swipeable Layout - 100% Scroll Fixed)
+   KitchenPage.css (100% Desktop and Mobile Scroll Verified Master Copy)
    ========================================================================== */
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-body {
+body, html {
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Body scroll strictly disable taaki page static rahe */
+  height: 100vh;
+  overflow: hidden; /* Body layout shake freeze logic */
 }
 
 .kitchen-container {
   background-color: #f0fdfa;
-  height: 100vh; /* Complete screen viewport lock */
+  height: 100vh; 
   padding: 20px;
   font-family: system-ui, -apple-system, sans-serif;
   display: flex;
   flex-direction: column;
-  overflow: hidden; 
 }
 
 /* ================= HEADER ================= */
@@ -29,7 +29,7 @@ body {
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-  flex-shrink: 0; /* Header apni jagah se hilega nahi */
+  flex-shrink: 0;
 }
 
 .kitchen-title {
@@ -50,51 +50,60 @@ body {
   grid-template-columns: repeat(3, 1fr); 
   gap: 25px;
   margin-top: 20px;
-  flex: 1; /* Bachi hui poori screen space lega */
-  overflow: hidden; /* Out of viewport leak protection */
+  flex: 1; 
+  overflow: hidden; /* Prevent grid bleed out */
 }
 
+/* 🔥 COLUMN LEVEL FIX: Flex shrink block to make container stable 🔥 */
 .kitchen-column {
   background: #f8fafc;
   border-radius: 16px;
   padding: 15px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 120px) !important; /* 🔥 Strict Desktop height lock taaki inner container scroll ho sake */
+  height: 100%; /* Automatically scales inside the master grid boundary */
+  min-height: 0; /* Extremely Critical: Allows children to shrink and scroll */
   border: 1px solid #e2e8f0;
 }
 
 .column-header {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0;
-  flex-shrink: 0; /* Sticky column title */
+  flex-shrink: 0;
 }
 .column-header h3 { margin: 0; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px; }
 .col-count { background: #e2e8f0; color: #475569; padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; }
 
-/* 🔥 THE SCROLL FIX: Strict inner container auto scroll toggle 🔥 */
+/* 🔥 THE PERFECT SCROLL ENGAGEMENT: Overflow set cleanly 🔥 */
 .kitchen-grid {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  flex: 1 !important; 
-  overflow-y: auto !important; /* Forces vertical mouse scroll when full */
-  padding-bottom: 20px;
-  scrollbar-width: thin; /* Desktop standard thin scroller visible optionally */
+  flex: 1; 
+  overflow-y: auto !important; /* Standard browser engine scroll trigger */
+  padding-bottom: 10px;
+  scrollbar-width: none !important; /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none !important;  /* Hide scrollbar for IE/Edge */
 }
 
-/* CARDS UNIQUE DESIGN */
+/* Hide scrollbar for Chrome, Safari, and newer Edge */
+.kitchen-grid::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* ================= CARDS UNIQUE DESIGN ================= */
 .kitchen-card {
   background-color: white;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   display: flex; flex-direction: column;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 1px solid #f1f5f9;
-  flex-shrink: 0; /* Prevents compression of cards when loaded */
+  flex-shrink: 0; 
 }
-.kitchen-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+.kitchen-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.06); }
 
 .card-top-bar { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: white; }
 .bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
@@ -115,7 +124,6 @@ body {
 
 .card-action-box { padding: 0 15px 15px 15px; }
 .kitchen-btn { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.kitchen-btn:active { transform: scale(0.97); }
 
 /* LOADING ENGINE OVERLAYS */
 .kitchen-loading-overlay { position: fixed; inset: 0; background-color: rgba(240,253,250,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
@@ -124,7 +132,7 @@ body {
 
 
 /* ==========================================================================
-   📱 STRICT RESPONSIVE SMARTPHONES (TRELLO HORIZONTAL SWIPE)
+   📱 STRICT RESPONSIVE SMARTPHONES (TRELLO HORIZONTAL SWIPE CONTEXT)
    ========================================================================== */
 @media screen and (max-width: 768px) {
   .kitchen-container { padding: 10px 0 0 0; }
@@ -139,36 +147,17 @@ body {
     gap: 15px; 
     padding: 0 15px 20px 15px !important;
     scroll-snap-type: x mandatory; 
-    scrollbar-width: none;
     margin-top: 0;
   }
-  .kitchen-main-grid::-webkit-scrollbar { display: none; }
 
   .kitchen-column {
     flex: 0 0 88vw !important; 
-    height: calc(100vh - 90px) !important; /* Mobile vertical fallback calculation stretch */
+    height: calc(100vh - 110px) !important; 
     scroll-snap-align: center; 
   }
   
- /* 🔥 THE PERFECT SCROLL FIX: Scrollbar invisible par vertical scroll ON 🔥 */
-.kitchen-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1 !important; 
-  overflow-y: auto !important; /* Mouse wheel aur touch scroll kaam karega */
-  padding-bottom: 20px;
-  
-  /* Chrome, Safari, Opera aur Edge se scrollbar hide karne ke liye */
-  &::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
+  .kitchen-grid {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch; 
   }
-  
-  /* Firefox se scrollbar hide karne ke liye */
-  scrollbar-width: none !important;
-  
-  /* IE aur Edge ke purane versions ke liye */
-  -ms-overflow-style: none !important; 
 }
