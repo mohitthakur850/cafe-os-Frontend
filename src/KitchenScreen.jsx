@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import './KitchenScreen.css';
+import './KitchenPage.css';
 
 const API_URL = 'https://cafe-os-backend.onrender.com';
 
@@ -30,20 +30,17 @@ export default function KitchenPage() {
       fetchOrders();
     });
 
-    const interval = setInterval(fetchOrders, 15000); // 15s Fallback backup
+    const interval = setInterval(fetchOrders, 15000);
     return () => { clearInterval(interval); socket.disconnect(); };
   }, []);
 
-  // 🔥 THE BIG FIX: Added fetchOrders() instantly inside try block 🔥
   const updateStatus = async (id, status) => {
     setUpdatingOrders(prev => [...prev, id]); 
-
     try {
       await axios.put(`${API_URL}/orders/${id}/status?status=${status}`);
-      await fetchOrders(); // 🚀 Instant screen re-render on click!
+      await fetchOrders(); 
     } catch (err) {
       console.error("Error updating status:", err);
-      alert('Failed to update status');
     } finally {
       setUpdatingOrders(prev => prev.filter(orderId => orderId !== id)); 
     }
