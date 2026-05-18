@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import './KitchenPage.css';
+import './KitchenScreen.css';
 
 const API_URL = 'https://cafe-os-backend.onrender.com';
 
