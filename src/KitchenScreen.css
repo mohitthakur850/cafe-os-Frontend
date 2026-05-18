@@ -1,163 +1,427 @@
 /* ==========================================================================
-   KitchenPage.css (100% Desktop and Mobile Scroll Verified Master Copy)
+   KitchenPage.css (FINAL SCROLL FIXED VERSION)
    ========================================================================== */
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
-body, html {
+html,
+body {
   margin: 0;
   padding: 0;
-  height: 100vh;
-  overflow: hidden; /* Body layout shake freeze logic */
+  height: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
 }
 
 .kitchen-container {
   background-color: #f0fdfa;
-  height: 100vh; 
+  height: 100vh;
   padding: 20px;
   font-family: system-ui, -apple-system, sans-serif;
+
   display: flex;
   flex-direction: column;
+
+  overflow: hidden;
 }
 
 /* ================= HEADER ================= */
+
 .kitchen-header {
   background-color: white;
-  padding: 15px 25px; 
+  padding: 15px 25px;
   border-radius: 12px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+
   flex-shrink: 0;
 }
 
 .kitchen-title {
-  margin: 0; color: #0f172a;
-  font-size: 1.6rem; font-weight: 900;
-  display: flex; align-items: center; gap: 10px;
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.6rem;
+  font-weight: 900;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .kitchen-active-count {
-  font-size: 1.1rem; font-weight: bold; color: #64748b;
-  background: #f1f5f9; padding: 8px 15px; border-radius: 30px;
-}
-.kitchen-active-number { color: #dc2626; font-size: 1.3rem; margin-left: 5px; }
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #64748b;
 
-/* ================= DESKTOP KANBAN GRID ================= */
+  background: #f1f5f9;
+  padding: 8px 15px;
+  border-radius: 30px;
+}
+
+.kitchen-active-number {
+  color: #dc2626;
+  font-size: 1.3rem;
+  margin-left: 5px;
+}
+
+/* ================= MAIN GRID ================= */
+
 .kitchen-main-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 25px;
   margin-top: 20px;
-  flex: 1; 
-  overflow: hidden; /* Prevent grid bleed out */
+
+  flex: 1;
+  min-height: 0;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 25px;
+
+  overflow: hidden;
 }
 
-/* 🔥 COLUMN LEVEL FIX: Flex shrink block to make container stable 🔥 */
+/* ================= COLUMN ================= */
+
 .kitchen-column {
   background: #f8fafc;
   border-radius: 16px;
   padding: 15px;
+
+  border: 1px solid #e2e8f0;
+
   display: flex;
   flex-direction: column;
-  height: 100%; /* Automatically scales inside the master grid boundary */
-  min-height: 0; /* Extremely Critical: Allows children to shrink and scroll */
-  border: 1px solid #e2e8f0;
+
+  height: 100%;
+  min-height: 0;
+
+  overflow: hidden;
 }
+
+/* ================= COLUMN HEADER ================= */
 
 .column-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+
+  border-bottom: 2px solid #e2e8f0;
+
   flex-shrink: 0;
 }
-.column-header h3 { margin: 0; font-size: 1.2rem; color: #0f172a; display: flex; align-items: center; gap: 8px; }
-.col-count { background: #e2e8f0; color: #475569; padding: 2px 10px; border-radius: 20px; font-size: 0.9rem; }
 
-/* 🔥 THE PERFECT SCROLL ENGAGEMENT: Overflow set cleanly 🔥 */
+.column-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-count {
+  background: #e2e8f0;
+  color: #475569;
+
+  padding: 2px 10px;
+  border-radius: 20px;
+
+  font-size: 0.9rem;
+}
+
+/* ================= SCROLLABLE GRID ================= */
+
 .kitchen-grid {
+  flex: 1;
+  min-height: 0;
+
   display: flex;
   flex-direction: column;
   gap: 15px;
-  flex: 1; 
-  overflow-y: auto !important; /* Standard browser engine scroll trigger */
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
   padding-bottom: 10px;
-  scrollbar-width: none !important; /* Hide scrollbar for Firefox */
-  -ms-overflow-style: none !important;  /* Hide scrollbar for IE/Edge */
+
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* Hide scrollbar for Chrome, Safari, and newer Edge */
 .kitchen-grid::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+  display: none;
 }
 
-/* ================= CARDS UNIQUE DESIGN ================= */
+/* ================= CARDS ================= */
+
 .kitchen-card {
   background-color: white;
   border-radius: 12px;
+
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  display: flex; flex-direction: column;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+  display: flex;
+  flex-direction: column;
+
   border: 1px solid #f1f5f9;
-  flex-shrink: 0; 
+
+  flex-shrink: 0;
+
+  transition: 0.2s;
 }
-.kitchen-card:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.06); }
 
-.card-top-bar { padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; color: white; }
-.bg-orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
-.bg-blue { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-.bg-green { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.kitchen-card:hover {
+  transform: translateY(-2px);
 
-.card-order-id { margin: 0; font-size: 1.2rem; font-weight: 900; }
-.card-status-badge { background-color: rgba(255, 255, 255, 0.3); padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; letter-spacing: 0.5px; text-transform: uppercase; }
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.06);
+}
 
-.card-body { padding: 15px; flex: 1; }
-.card-customer { display: flex; align-items: center; gap: 8px; color: #1e293b; font-weight: 900; font-size: 1.1rem; margin-bottom: 12px; border-bottom: 2px dashed #e2e8f0; padding-bottom: 12px; }
+/* ================= TOP BAR ================= */
 
-.item-list { display: flex; flex-direction: column; gap: 10px; }
-.item-row { display: flex; justify-content: space-between; align-items: flex-start; color: #334155; font-size: 0.95rem; font-weight: 700; }
-.item-name-col { flex: 1; padding-right: 10px; }
-.item-addons { font-size: 0.8rem; color: #94a3b8; font-weight: 600; margin-top: 4px; display: block; }
-.item-qty { background-color: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-weight: 900; color: #0f172a; font-size: 0.9rem; }
+.card-top-bar {
+  padding: 12px 15px;
 
-.card-action-box { padding: 0 15px 15px 15px; }
-.kitchen-btn { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-/* LOADING ENGINE OVERLAYS */
-.kitchen-loading-overlay { position: fixed; inset: 0; background-color: rgba(240,253,250,0.9); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-.kitchen-spinner { width: 60px; height: 60px; border: 6px solid #ccfbf1; border-top-color: #14b8a6; border-radius: 50%; animation: kitchenSpin 1s linear infinite; }
-@keyframes kitchenSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  color: white;
+}
 
+.bg-orange {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
 
-/* ==========================================================================
-   📱 STRICT RESPONSIVE SMARTPHONES (TRELLO HORIZONTAL SWIPE CONTEXT)
-   ========================================================================== */
+.bg-blue {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
+
+.bg-green {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.card-order-id {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+.card-status-badge {
+  background-color: rgba(255, 255, 255, 0.3);
+
+  padding: 4px 10px;
+  border-radius: 12px;
+
+  font-size: 0.75rem;
+  font-weight: bold;
+
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ================= BODY ================= */
+
+.card-body {
+  padding: 15px;
+  flex: 1;
+}
+
+.card-customer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  color: #1e293b;
+
+  font-weight: 900;
+  font-size: 1.1rem;
+
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+
+  border-bottom: 2px dashed #e2e8f0;
+}
+
+/* ================= ITEMS ================= */
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  color: #334155;
+
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.item-name-col {
+  flex: 1;
+  padding-right: 10px;
+}
+
+.item-addons {
+  display: block;
+
+  margin-top: 4px;
+
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  color: #94a3b8;
+}
+
+.item-qty {
+  background-color: #f1f5f9;
+
+  padding: 4px 10px;
+  border-radius: 8px;
+
+  font-weight: 900;
+  font-size: 0.9rem;
+
+  color: #0f172a;
+}
+
+/* ================= BUTTON ================= */
+
+.card-action-box {
+  padding: 0 15px 15px 15px;
+}
+
+.kitchen-btn {
+  width: 100%;
+
+  padding: 12px;
+
+  border: none;
+  border-radius: 8px;
+
+  color: white;
+
+  font-size: 1rem;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ================= LOADING ================= */
+
+.kitchen-loading-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 9999;
+
+  background-color: rgba(240, 253, 250, 0.9);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.kitchen-spinner {
+  width: 60px;
+  height: 60px;
+
+  border: 6px solid #ccfbf1;
+  border-top-color: #14b8a6;
+
+  border-radius: 50%;
+
+  animation: kitchenSpin 1s linear infinite;
+}
+
+@keyframes kitchenSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================= MOBILE ================= */
+
 @media screen and (max-width: 768px) {
-  .kitchen-container { padding: 10px 0 0 0; }
-  .kitchen-header { margin: 0 15px 15px 15px; padding: 15px; }
-  .kitchen-title { font-size: 1.3rem; }
+
+  .kitchen-container {
+    padding: 10px 0 0 0;
+  }
+
+  .kitchen-header {
+    margin: 0 15px 15px 15px;
+    padding: 15px;
+  }
+
+  .kitchen-title {
+    font-size: 1.3rem;
+  }
 
   .kitchen-main-grid {
-    display: flex !important; 
+    display: flex !important;
     flex-direction: row !important;
-    overflow-x: auto !important; 
+
+    overflow-x: auto !important;
     overflow-y: hidden !important;
-    gap: 15px; 
+
+    gap: 15px;
+
     padding: 0 15px 20px 15px !important;
-    scroll-snap-type: x mandatory; 
+
+    scroll-snap-type: x mandatory;
+
     margin-top: 0;
+
+    height: calc(100vh - 100px);
   }
 
   .kitchen-column {
-    flex: 0 0 88vw !important; 
-    height: calc(100vh - 110px) !important; 
-    scroll-snap-align: center; 
+    flex: 0 0 88vw !important;
+
+    height: 100% !important;
+
+    scroll-snap-align: center;
+
+    overflow: hidden;
   }
-  
+
   .kitchen-grid {
+    flex: 1;
+    min-height: 0;
+
     overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch; 
+
+    -webkit-overflow-scrolling: touch;
   }
 }
