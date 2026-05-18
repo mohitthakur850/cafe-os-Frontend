@@ -33,7 +33,7 @@ const AdminPage = () => {
   const [image, setImage] = useState('');
   const [price, setPrice] = useState('');
   const [addons, setAddons] = useState([{ name: '', price: '' }]);
-  const [selectionType, setSelectionType] = useState('Multiple'); // Naya Feature
+  const [selectionType, setSelectionType] = useState('Multiple'); 
 
   const [newCatName, setNewCatName] = useState('');
   const [newCatImg, setNewCatImg] = useState('');
@@ -42,45 +42,118 @@ const AdminPage = () => {
     e.preventDefault();
     try {
       const res = await axios.post(`${API_URL}/admin/login`, { username: usernameInput, password: passwordInput });
-      if (res.data.success) { setIsAuthenticated(true); setLoginError(''); localStorage.setItem('isAdmin', 'true'); setIsLoading(true); }
-    } catch { setLoginError('Invalid Username or Password! 🚫'); setPasswordInput(''); }
+      if (res.data.success) { 
+        setIsAuthenticated(true); 
+        setLoginError(''); 
+        localStorage.setItem('isAdmin', 'true'); 
+        setIsLoading(true); 
+      }
+    } catch { 
+      setLoginError('Invalid Username or Password! 🚫'); 
+      setPasswordInput(''); 
+    }
   };
-  const handleLogout = () => { setIsAuthenticated(false); setUsernameInput(''); setPasswordInput(''); };
+  
+  const handleLogout = () => { 
+    setIsAuthenticated(false); 
+    setUsernameInput(''); 
+    setPasswordInput(''); 
+    localStorage.removeItem('isAdmin');
+  };
 
   const fetchData = useCallback(async () => {
     if (!isAuthenticated) return; 
     try {
-      const [pRes, oRes, cRes] = await Promise.all([ axios.get(`${API_URL}/products`), axios.get(`${API_URL}/orders`), axios.get(`${API_URL}/categories`) ]);
-      setProducts(pRes.data); setOrders(oRes.data); setCategories(cRes.data);
-    } catch (e) { console.error("Error fetching data", e); }
-    finally { setIsLoading(false); }
+      const [pRes, oRes, cRes] = await Promise.all([ 
+        axios.get(`${API_URL}/products`), 
+        axios.get(`${API_URL}/orders`), 
+        axios.get(`${API_URL}/categories`) 
+      ]);
+      setProducts(pRes.data); 
+      setOrders(oRes.data); 
+      setCategories(cRes.data);
+    } catch (e) { 
+      console.error("Error fetching data", e); 
+    } finally { 
+      setIsLoading(false); 
+    }
   }, [isAuthenticated]);
 
-  // ⚡ Live WebSocket Engine (No more setInterval)
+  // ⚡ Live WebSocket Engine (Fixed Realtime trigger)
   useEffect(() => { 
-    fetchData(); 
+    if (isAuthenticated) {
+      fetchData(); 
+    }
     
     const socket = io(API_URL, { transports: ['websocket'] });
     socket.on('orderUpdated', () => {
-      console.log("🔥 Admin Live Update!");
-      if (isAuthenticated) fetchData(); 
+      console.log("🔥 Admin Live Update Event Triggered!");
+      fetchData(); 
     });
 
     return () => socket.disconnect(); 
   }, [fetchData, isAuthenticated]);
 
-  const toggleStock = async (product) => { try { await axios.put(`${API_URL}/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); fetchData(); } catch { alert('Error updating stock'); } };
-  const handleImageUpload = (e, setImageState) => { const file = e.target.files[0]; if (file) { if (file.size > 2000000) return alert("File size should be less than 2MB."); const reader = new FileReader(); reader.onloadend = () => setImageState(reader.result); reader.readAsDataURL(file); } };
-  const handleEditCategoryClick = (c) => { setEditingCatId(c._id); setNewCatName(c.name); setNewCatImg(c.image || ''); window.scrollTo(0, 0); };
-  const cancelCategoryEdit = () => { setEditingCatId(null); setNewCatName(''); setNewCatImg(''); };
-  const handleSaveCategory = async () => { if(!newCatName) return; try { if (editingCatId) { await axios.put(`${API_URL}/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); } else { await axios.post(`${API_URL}/categories`, { name: newCatName, image: newCatImg }); } setEditingCatId(null); setNewCatName(''); setNewCatImg(''); fetchData(); } catch { alert("Error saving category."); } };
+  const toggleStock = async (product) => { 
+    try { 
+      await axios.put(`${API_URL}/products/${product._id || product.id}`, { isAvailable: !product.isAvailable }); 
+      fetchData(); 
+    } catch { 
+      alert('Error updating stock'); 
+    } 
+  };
+
+  const handleImageUpload = (e, setImageState) => { 
+    const file = e.target.files[0]; 
+    if (file) { 
+      if (file.size > 2000000) return alert("File size should be less than 2MB."); 
+      const reader = new FileReader(); 
+      reader.onloadend = () => setImageState(reader.result); 
+      reader.readAsDataURL(file); 
+    } 
+  };
+
+  const handleEditCategoryClick = (c) => { 
+    setEditingCatId(c._id); 
+    setNewCatName(c.name); 
+    setNewCatImg(c.image || ''); 
+    window.scrollTo(0, 0); 
+  };
+
+  const cancelCategoryEdit = () => { 
+    setEditingCatId(null); 
+    setNewCatName(''); 
+    setNewCatImg(''); 
+  };
+
+  const handleSaveCategory = async () => { 
+    if(!newCatName) return; 
+    try { 
+      if (editingCatId) { 
+        await axios.put(`${API_URL}/categories/${editingCatId}`, { name: newCatName, image: newCatImg }); 
+      } else { 
+        await axios.post(`${API_URL}/categories`, { name: newCatName, image: newCatImg }); 
+      } 
+      setEditingCatId(null); 
+      setNewCatName(''); 
+      setNewCatImg(''); 
+      fetchData(); 
+    } catch { 
+      alert("Error saving category."); 
+    } 
+  };
   
-  const handleAddonChange = (index, field, value) => { const newAddons = [...addons]; newAddons[index][field] = value; setAddons(newAddons); };
+  const handleAddonChange = (index, field, value) => { 
+    const newAddons = [...addons]; 
+    newAddons[index][field] = value; 
+    setAddons(newAddons); 
+  };
+
   const addAddonRow = () => setAddons([...addons, { name: '', price: '' }]);
   const removeAddonRow = (index) => setAddons(addons.filter((_, i) => i !== index));
   
   const handleEditClick = (p) => { 
-    setEditingId(p._id); 
+    setEditingId(p._id || p.id); 
     setName(p.name); 
     setCategory(p.category); 
     setSubCategory(p.subCategory || ''); 
@@ -88,29 +161,62 @@ const AdminPage = () => {
     setImage(p.image || ''); 
     setPrice(p.price); 
     setAddons(p.addons && p.addons.length > 0 ? p.addons : [{ name: '', price: '' }]); 
-    setSelectionType(p.selectionType || 'Multiple');
+    setSelectionType(p.selectionType || 'Multiple'); // Now accurately pre-fills Single/Multiple configuration
     window.scrollTo(0, 0); 
   };
   
   const handleSaveProduct = async (e) => { 
     e.preventDefault(); 
-    const data = { name, category, subCategory, description, image, price: price === '' ? 0 : Number(price), addons: addons.filter(a => a.name), selectionType }; 
+    const data = { 
+      name, 
+      category, 
+      subCategory, 
+      description, 
+      image, 
+      price: price === '' ? 0 : Number(price), 
+      addons: addons.filter(a => a.name), 
+      selectionType // 🔥 Fixed: Payload captures 'Single' / 'Multiple' perfectly
+    }; 
     try { 
-      if (editingId) { await axios.put(`${API_URL}/products/${editingId}`, data); } 
-      else { await axios.post(`${API_URL}/products`, data); } 
-      setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); setSelectionType('Multiple'); fetchData(); 
-    } catch { alert('Error saving product'); } 
+      if (editingId) { 
+        await axios.put(`${API_URL}/products/${editingId}`, data); 
+      } else { 
+        await axios.post(`${API_URL}/products`, data); 
+      } 
+      setEditingId(null); 
+      setName(''); 
+      setCategory(''); 
+      setSubCategory(''); 
+      setDescription(''); 
+      setImage(''); 
+      setPrice(''); 
+      setAddons([{ name: '', price: '' }]); 
+      setSelectionType('Multiple'); 
+      fetchData(); 
+    } catch { 
+      alert('Error saving product'); 
+    } 
   };
   
-  const handleDeleteProduct = async (id) => { if(window.confirm("Delete this from the menu?")) { await axios.delete(`${API_URL}/products/${id}`); fetchData(); } };
+  const handleDeleteProduct = async (id) => { 
+    if(window.confirm("Delete this from the menu?")) { 
+      await axios.delete(`${API_URL}/products/${id}`); 
+      fetchData(); 
+    } 
+  };
 
+  // 🔥 THE BIG FIX: Auto Refresh after Status Change 🔥
   const updateOrderStatus = async (orderId, newStatus) => {
-    try { await axios.put(`${API_URL}/orders/${orderId}/status?status=${newStatus}`); } catch { alert('Error updating'); }
+    try { 
+      await axios.put(`${API_URL}/orders/${orderId}/status?status=${newStatus}`); 
+      fetchData(); // 🚀 Instant auto refresh inside dashboard
+    } catch { 
+      alert('Error updating order status'); 
+    }
   };
 
   const getFilteredOrders = () => { 
     const today = new Date(); 
-    
     const yesterday = new Date(today); 
     yesterday.setDate(yesterday.getDate() - 1); 
 
@@ -148,7 +254,13 @@ const AdminPage = () => {
   const renderOrderCard = (order, isLive) => (
     <div key={order._id || order.id} style={{ backgroundColor: 'white', borderRadius: '16px', padding: '25px', boxShadow: '0 5px 15px rgba(0,0,0,0.05)', borderTop: `5px solid ${isLive ? '#0ea5e9' : '#22c55e'}`, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '15px' }}>
-        <div><h3 style={{ margin: 0, fontSize: '1.4rem', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '4px 10px', borderRadius: '8px', fontSize: '1.2rem', fontWeight: '900' }}>#{order.id}</span>{order.customer_name}</h3><span style={{ color: '#888', fontSize: '0.9rem', display: 'block', marginTop: '5px' }}>{formatDate(order.createdAt)}</span></div>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#333', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ backgroundColor: '#fef08a', color: '#a16207', padding: '4px 10px', borderRadius: '8px', fontSize: '1.2rem', fontWeight: '900' }}>#{order.id}</span>
+            {order.customer_name}
+          </h3>
+          <span style={{ color: '#888', fontSize: '0.9rem', display: 'block', marginTop: '5px' }}>{formatDate(order.createdAt)}</span>
+        </div>
         <h2 style={{ margin: 0, color: '#28a745' }}>₹{order.total}</h2>
       </div>
       <div style={{ flex: 1, marginBottom: '20px' }}>
@@ -161,7 +273,7 @@ const AdminPage = () => {
       </div>
       {isLive ? (
         <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-           {order.status === 'Preparing' ? (
+           {order.status === 'Preparing' || order.status === 'Accepted' ? (
              <button onClick={() => updateOrderStatus(order._id || order.id, 'Ready')} style={{ flex: 1, padding: '12px', backgroundColor: '#0ea5e9', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Mark as Ready</button>
            ) : (
              <button onClick={() => updateOrderStatus(order._id || order.id, 'Completed')} style={{ flex: 1, padding: '12px', backgroundColor: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Hand Over</button>
@@ -252,7 +364,7 @@ const AdminPage = () => {
                   <div className="auto-grid" style={{ marginTop: '20px' }}>
                     {catProducts.map(p => (
                       <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', border: '1px solid #e2e8f0', borderRadius: '12px', backgroundColor: p.isAvailable === false ? '#fff1f2' : '#f8fafc', transition: '0.2s' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}><img src={p.image || 'https://via.placeholder.com/50'} alt="item" style={{ width: '50px', height: '50px', borderRadius: '10px', objectFit: 'cover', filter: p.isAvailable === false ? 'grayscale(100%) opacity(60%)' : 'none', flexShrink: 0 }} /><div style={{ overflow: 'hidden' }}><div style={{ fontWeight: 'bold', color: p.isAvailable === false ? '#94a3b8' : '#1e293b', fontSize: '1.1rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.name}</div><div style={{ fontSize: '0.85rem', color: '#64748b' }}>₹{p.price !== undefined ? p.price : 0}</div></div></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', overflow: 'hidden' }}><img src={p.image || 'https://via.placeholder.com/50'} alt="item" style={{ width: '50px', height: '50px', borderRadius: '10px', objectFit: 'cover', filter: p.isAvailable === false ? 'grayscale(100%) opacity(60%)' : 'none', flexShrink: 0 }} /><div style={{ overflow: 'hidden' }}><div style={{ font|Weight: 'bold', color: p.isAvailable === false ? '#94a3b8' : '#1e293b', fontSize: '1.1rem', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.name}</div><div style={{ fontSize: '0.85rem', color: '#64748b' }}>₹{p.price !== undefined ? p.price : 0}</div></div></div>
                         <button onClick={() => toggleStock(p)} style={{ backgroundColor: p.isAvailable === false ? '#fecdd3' : '#bbf7d0', color: p.isAvailable === false ? '#e11d48' : '#16a34a', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.95rem' }}>{p.isAvailable === false ? 'Out 🚫' : 'In Stock ✅'}</button>
                       </div>
                     ))}
@@ -291,9 +403,9 @@ const AdminPage = () => {
                   </select>
                 </div>
               </div>
-              <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}><label style={labelStyle}>Item Image</label><div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}><div style={{ flex: 1, minWidth: '200px' }}><input placeholder="Paste Image URL" value={image} onChange={e => setImage(e.target.value)} style={{...inputStyle, marginBottom: '10px'}} /><div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{fontWeight: 'bold', color: '#888'}}>OR</span><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setImage)} style={{flex: 1, padding: '5px', fontSize: '0.9rem'}} /></div></div>{image ? (<img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #ccc' }} />) : (<div style={{ width: '80px', height: '80px', backgroundColor: '#eaeaea', borderRadius: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>No Image</div>)}</div></div>
+              <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}><label style={labelStyle}>Item Image</label><div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}><div style={{ flex: 1, minWidth: '200px' }}><input placeholder="Paste Image URL" value={image} onChange={e => setImage(e.target.value)} style={{...inputStyle, marginBottom: '10px'}} /><div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><span style={{fontWeight: 'bold', color: '#888'}}>OR</span><input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, setImage)} style={{flex: 1, padding: '5px', fontSize: '0.9rem'}} /></div></div>{image ? (<img src={image} alt="Preview" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '2px solid #ccc' }} />) : (<div style={{ width: '80px', height: '80px', backgroundColor: '#eaeaea', borderRadius: '8px', display: 'flex', justifycontent: 'center', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>No Image</div>)}</div></div>
               <div><label style={labelStyle}>Description</label><textarea rows="2" value={description} onChange={e => setDescription(e.target.value)} style={inputStyle} /></div>
-              <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><label style={labelStyle}>Add-ons (Optional)</label><button type="button" onClick={addAddonRow} style={{...btnStyle, padding: '5px 10px', fontSize: '0.8rem', backgroundColor: '#333'}}>+ Add Row</button></div>{addons.map((addon, index) => (<div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}><input placeholder="Addon Name" value={addon.name} onChange={e => handleAddonChange(index, 'name', e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 2 }} /><input type="number" placeholder="Price" value={addon.price} onChange={e => handleAddonChange(index, 'price', e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />{addons.length > 1 && <button type="button" onClick={() => removeAddonRow(index)} style={{ padding: '0 15px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✖</button>}</div>))}</div>
+              <div style={{ padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #eee' }}><div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><label style={labelStyle}>Add-ons (Optional)</label><button type="button" onClick={addAddonRow} style={{...btnStyle, padding: '5px 10px', fontSize: '0.8rem', backgroundColor: '#333'}}>+ Add Row</button></div>{addons.map((addon, index) => (<div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}><input placeholder="Addon Name" value={addon.name} onChange={e => handleAddonChange(index, 'name', e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 2 }} /><input type="number" placeholder="Price" value={addon.price} onChange={e => handleAddonChange(index, 'price', e.target.value)} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />{addons.length > 1 && <button type="button" onClick={() => removeAddonRow(index)} style={{ padding: '0 15px', backgroundColor: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>✖</button>}</div>))}</div>
               <button type="submit" style={{ padding: '15px', backgroundColor: editingId ? '#0ea5e9' : '#f472b6', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.2rem', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>{editingId ? "Update Item" : "Save to Menu"}</button>
               {editingId && <button type="button" onClick={() => {setEditingId(null); setName(''); setCategory(''); setSubCategory(''); setDescription(''); setImage(''); setPrice(''); setAddons([{ name: '', price: '' }]); setSelectionType('Multiple');}} style={{background:'none', border:'none', color:'#888', cursor:'pointer', marginTop:'10px'}}>Cancel Edit</button>}
             </form>
@@ -302,7 +414,7 @@ const AdminPage = () => {
             <h2 style={{ margin: '0 0 30px 0', color: '#333' }}>📦 Live Menu Items ({products.length})</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
               {products.map(p => (
-                <div key={p._id || p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)', flexWrap: 'wrap', gap: '10px' }}>
+                <div key={p._id || p.id} style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', padding: '15px', border: '1px solid #eee', borderRadius: '12px', backgroundColor: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}><img src={p.image || 'https://via.placeholder.com/50'} alt="Item" style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} /><div><h4 style={{ margin: '0 0 5px 0', color: '#333', fontSize: '1.1rem' }}>{p.name} <span style={{ color: '#28a745', marginLeft: '10px' }}>₹{p.price !== undefined ? p.price : 0}</span></h4><div style={{ fontSize: '0.85rem', color: '#888' }}><strong>{p.category}</strong> {p.subCategory && `> ${p.subCategory}`} {p.selectionType === 'Single' && <span style={{backgroundColor: '#e0f2fe', color: '#0284c7', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px', fontSize: '0.75rem'}}>Single Select</span>}</div></div></div>
                   <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                     <button onClick={() => handleEditClick(p)} style={{ background: 'none', border: 'none', color: '#0ea5e9', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}>Modify</button>
