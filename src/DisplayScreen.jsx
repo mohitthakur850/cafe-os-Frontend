@@ -27,29 +27,36 @@ export default function DisplayScreen() {
   };
 
   useEffect(() => {
+    // 1. Initial Load
     fetchLiveOrders();
+
+    // 2. ⚡ WEBSOCKET CONNECTION
     const socket = io(API_URL, { transports: ['websocket'] });
     socket.on('orderUpdated', () => {
-      console.log("🔥 Live TV Screen Auto-Refreshing Now!");
-      fetchLiveOrders(true); 
+      console.log("🔥 Live TV Screen Auto-Refreshing Now via Socket!");
+      fetchLiveOrders(true); // Silent update without flash loader
     });
-    return () => socket.disconnect();
+
+    // 3. 🛡️ SMART FALLBACK REFRESH (Har 5 second mein backup pull)
+    const backupInterval = setInterval(() => {
+      fetchLiveOrders(true); // Silent background check
+    }, 5000);
+
+    return () => {
+      socket.disconnect();
+      clearInterval(backupInterval);
+    };
   }, []);
 
-  // 📜 SMART AUTO-SCROLL ENGINE (Perfect Loop Up & Down when full)
+  // 📜 SMART AUTO-SCROLL ENGINE
   useEffect(() => {
     const autoScroll = (ref) => {
       if (ref.current) {
         const { scrollTop, scrollHeight, clientHeight } = ref.current;
-        
-        // Agar items container height se bade hain tabhi scroll karega
         if (scrollHeight > clientHeight) {
-          // Check agar scroll ekdum bottom tak pahuch gaya hai (with 8px buffer)
           if (scrollTop + clientHeight >= scrollHeight - 8) {
-            // Wapas top par leak proof smooth scroll up karega
             ref.current.scrollTo({ top: 0, behavior: 'smooth' });
           } else {
-            // Dheere dheere 80px niche slide karega
             ref.current.scrollBy({ top: 80, behavior: 'smooth' });
           }
         }
@@ -60,10 +67,10 @@ export default function DisplayScreen() {
       autoScroll(pendRef);
       autoScroll(prepRef); 
       autoScroll(collRef); 
-    }, 3500); // Har 3.5 seconds mein calculation check karke scroll karega
+    }, 3500);
     
     return () => clearInterval(scrollTimer);
-  }, [orders]); // State change track clear rakhega
+  }, [orders]);
 
   const pendingOrders = orders
     .filter(o => o.status === 'Accepted')
@@ -88,7 +95,6 @@ export default function DisplayScreen() {
 
   return (
     <div className="display-container">
-      
       {isLoading && (
         <div className="tv-loading-overlay">
           <div className="tv-loading-spinner"></div>
@@ -97,7 +103,6 @@ export default function DisplayScreen() {
       )}
 
       <div className="tv-main-content">
-        
         {/* 1️⃣ PENDING PANEL */}
         <div className="panel panel-pending">
           <h1 className="main-heading heading-pend">In Queue</h1>
@@ -106,7 +111,6 @@ export default function DisplayScreen() {
             <div>Name</div>
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
-          
           <div className="order-list" ref={pendRef}>
             {pendingOrders.map(o => (
               <div key={o.id || o._id} className="grid-row order-card card-pend">
@@ -115,9 +119,7 @@ export default function DisplayScreen() {
                 <div className="col-time time-pend">{formatOrderTime(o.createdAt || o.created_at || o.date)}</div>
               </div>
             ))}
-            {pendingOrders.length === 0 && (
-              <p className="empty-tv-text">No orders waiting.</p>
-            )}
+            {pendingOrders.length === 0 && <p className="empty-tv-text">No orders waiting.</p>}
           </div>
         </div>
 
@@ -129,7 +131,6 @@ export default function DisplayScreen() {
             <div>Name</div>
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
-          
           <div className="order-list" ref={prepRef}>
             {preparingOrders.map(o => (
               <div key={o.id || o._id} className="grid-row order-card card-prep">
@@ -138,9 +139,7 @@ export default function DisplayScreen() {
                 <div className="col-time time-prep">{formatOrderTime(o.createdAt || o.created_at || o.date)}</div>
               </div>
             ))}
-            {preparingOrders.length === 0 && (
-              <p className="empty-tv-text">No orders preparing right now.</p>
-            )}
+            {preparingOrders.length === 0 && <p className="empty-tv-text">No orders preparing right now.</p>}
           </div>
         </div>
 
@@ -152,7 +151,6 @@ export default function DisplayScreen() {
             <div>Name</div>
             <div style={{ textAlign: 'right' }}>Time</div>
           </div>
-          
           <div className="order-list" ref={collRef}>
             {readyOrders.map(o => (
               <div key={o.id || o._id} className="grid-row order-card card-coll">
@@ -161,9 +159,7 @@ export default function DisplayScreen() {
                 <div className="col-time time-coll">{formatOrderTime(o.createdAt || o.created_at || o.date)}</div>
               </div>
             ))}
-            {readyOrders.length === 0 && (
-              <p className="empty-tv-text">All orders collected.</p>
-            )}
+            {readyOrders.length === 0 && <p className="empty-tv-text">All orders collected.</p>}
           </div>
         </div>
       </div>
