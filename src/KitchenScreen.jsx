@@ -11,7 +11,10 @@ import './KitchenScreen.css';
 // Backend URL
 const API_URL = 'https://cafe-os-backend.onrender.com';
 
-const getOrderId = (order) =>
+const getOrderKey = (order) =>
+  String(order._id || order.id);
+
+const getOrderRequestId = (order) =>
   String(order._id || order.id);
 
 export default function KitchenPage() {
@@ -27,7 +30,7 @@ export default function KitchenPage() {
 
         const pendingStatus =
           pendingStatusRef.current.get(
-            getOrderId(order)
+            getOrderKey(order)
           );
 
         if (pendingStatus) {
@@ -107,29 +110,30 @@ export default function KitchenPage() {
   }, [fetchOrders]);
 
   // UPDATE STATUS
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (order, status) => {
 
-    const orderId = String(id);
+    const orderKey = getOrderKey(order);
+    const requestId = getOrderRequestId(order);
 
     pendingStatusRef.current.set(
-      orderId,
+      orderKey,
       status
     );
 
     // Loading state
     setUpdatingOrders(prev =>
-      prev.includes(orderId)
+      prev.includes(orderKey)
         ? prev
         : [
             ...prev,
-            orderId
+            orderKey
           ]
     );
 
     setOrders(prevOrders =>
       prevOrders
         .map(order =>
-          getOrderId(order) === orderId
+          getOrderKey(order) === orderKey
             ? {
                 ...order,
                 status
@@ -145,7 +149,7 @@ export default function KitchenPage() {
     try {
 
       const res = await axios.put(
-        `${API_URL}/orders/${encodeURIComponent(orderId)}/status?status=${encodeURIComponent(status)}`,
+        `${API_URL}/orders/${encodeURIComponent(requestId)}/status?status=${encodeURIComponent(status)}`,
         { status }
       );
 
@@ -162,7 +166,7 @@ export default function KitchenPage() {
           .map(order => {
 
             if (
-              getOrderId(order) === orderId
+              getOrderKey(order) === orderKey
             ) {
 
               return {
@@ -189,7 +193,7 @@ export default function KitchenPage() {
     } catch (err) {
 
       pendingStatusRef.current.delete(
-        orderId
+        orderKey
       );
 
       console.error(
@@ -202,14 +206,14 @@ export default function KitchenPage() {
     } finally {
 
       pendingStatusRef.current.delete(
-        orderId
+        orderKey
       );
 
       // Remove loading state
       setUpdatingOrders(prev =>
         prev.filter(
           currentId =>
-            currentId !== orderId
+            currentId !== orderKey
         )
       );
 
@@ -361,7 +365,7 @@ export default function KitchenPage() {
             {newOrders.map(order => {
 
               const orderId =
-                getOrderId(order);
+                getOrderKey(order);
 
               const isUpdating =
                 updatingOrders.includes(
@@ -455,7 +459,7 @@ export default function KitchenPage() {
                       disabled={isUpdating}
                       onClick={() =>
                         updateStatus(
-                          orderId,
+                          order,
                           'Preparing'
                         )
                       }
@@ -499,7 +503,7 @@ export default function KitchenPage() {
             {prepOrders.map(order => {
 
               const orderId =
-                getOrderId(order);
+                getOrderKey(order);
 
               const isUpdating =
                 updatingOrders.includes(
@@ -593,7 +597,7 @@ export default function KitchenPage() {
                       disabled={isUpdating}
                       onClick={() =>
                         updateStatus(
-                          orderId,
+                          order,
                           'Ready'
                         )
                       }
@@ -637,7 +641,7 @@ export default function KitchenPage() {
             {readyOrders.map(order => {
 
               const orderId =
-                getOrderId(order);
+                getOrderKey(order);
 
               const isUpdating =
                 updatingOrders.includes(
@@ -731,7 +735,7 @@ export default function KitchenPage() {
                       disabled={isUpdating}
                       onClick={() =>
                         updateStatus(
-                          orderId,
+                          order,
                           'Completed'
                         )
                       }
