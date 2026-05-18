@@ -11,24 +11,25 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow: auto;
 }
 
 #root {
-  height: 100%;
+  min-height: 100%;
 }
 
 .kitchen-container {
   background-color: #f0fdfa;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   padding: 20px;
   font-family: system-ui, -apple-system, sans-serif;
 
   display: flex;
   flex-direction: column;
 
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ================= HEADER ================= */
@@ -81,13 +82,15 @@ body {
 
   flex: 1;
   min-height: 0;
+  height: calc(100vh - 125px);
+  height: calc(100dvh - 125px);
 
   display: grid;
   grid-template-columns: repeat(3, 1fr);
 
   gap: 25px;
 
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* ================= COLUMN ================= */
@@ -155,17 +158,27 @@ body {
 
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
 
   padding-bottom: 10px;
 
   -webkit-overflow-scrolling: touch;
 
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .kitchen-grid::-webkit-scrollbar {
-  display: none;
+  width: 8px;
+}
+
+.kitchen-grid::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 999px;
+}
+
+.kitchen-grid::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* ================= CARDS ================= */
