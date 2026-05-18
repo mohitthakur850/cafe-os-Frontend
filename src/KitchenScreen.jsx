@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { io } from 'socket.io-client';
-import './KitchenPage.css';
+import './KitchenScreen.css';
 
+// 👇 Tera naya Render wala Backend URL
 const API_URL = 'https://cafe-os-backend.onrender.com';
 
 export default function KitchenPage() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // 🔥 Yeh naya state track karega ki kaunsa order abhi update ho raha hai
   const [updatingOrders, setUpdatingOrders] = useState([]); 
 
   const fetchOrders = async () => {
@@ -26,29 +29,33 @@ export default function KitchenPage() {
     const socket = io(API_URL, { transports: ['websocket'] });
     
     socket.on('orderUpdated', () => {
-      console.log('⚡ Live TV Update Received in Kitchen!');
+      console.log('⚡ New Order Update Received in Kitchen!');
       fetchOrders();
     });
 
-    const interval = setInterval(fetchOrders, 15000);
+    const interval = setInterval(fetchOrders, 30000);
     return () => { clearInterval(interval); socket.disconnect(); };
   }, []);
 
+  // 🔥 Smart Update Function (With Loading Lock)
   const updateStatus = async (id, status) => {
-    setUpdatingOrders(prev => [...prev, id]); 
+    setUpdatingOrders(prev => [...prev, id]); // Button ko 'Updating...' state mein daalo
+
     try {
       await axios.put(`${API_URL}/orders/${id}/status?status=${status}`);
-      await fetchOrders(); 
+      await fetchOrders(); // Naya data laao
     } catch (err) {
       console.error("Error updating status:", err);
     } finally {
-      setUpdatingOrders(prev => prev.filter(orderId => orderId !== id)); 
+      setUpdatingOrders(prev => prev.filter(orderId => orderId !== id)); // Button normal kar do
     }
   };
 
+  // 🔥 THE MAGIC CODE: Auto-merges duplicate items inside a ticket 🔥
   const groupIdenticalItems = (items) => {
     const grouped = {};
     items.forEach(item => {
+      // Create a unique identifier for the item based on name + addons
       const addonStr = item.addons && item.addons.length > 0 
         ? item.addons.map(a => a.name).sort().join(',') 
         : 'no-addons';
@@ -63,6 +70,7 @@ export default function KitchenPage() {
     return Object.values(grouped);
   };
 
+  // Organize Orders
   const newOrders = orders.filter(o => o.status === 'Accepted').sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
   const prepOrders = orders.filter(o => o.status === 'Preparing').sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
   const readyOrders = orders.filter(o => o.status === 'Ready').sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 20);
@@ -223,7 +231,7 @@ export default function KitchenPage() {
                       className="kitchen-btn" 
                       style={{ backgroundColor: isUpdating ? '#94a3b8' : '#ef4444', cursor: isUpdating ? 'not-allowed' : 'pointer' }}
                       disabled={isUpdating}
-                      onClick={() => updateStatus(orderId, 'Completed')}
+                      onClick={() => updateStatus(orderId, 'Completed')} // Backend mein 'Completed' bhejna
                     >
                       {isUpdating ? '⏳ Updating...' : '🤝 Hand Over'}
                     </button>
