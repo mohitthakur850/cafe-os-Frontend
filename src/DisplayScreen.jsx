@@ -12,7 +12,6 @@ export default function DisplayScreen() {
   const prepRef = useRef(null);
   const collRef = useRef(null);
 
-  // 🔄 Fixed Live Fetching Engine with WebSockets
   const fetchLiveOrders = (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
@@ -29,26 +28,30 @@ export default function DisplayScreen() {
 
   useEffect(() => {
     fetchLiveOrders();
-
-    // ⚡ WEBSOCKET INSTANT CONNECTION
     const socket = io(API_URL, { transports: ['websocket'] });
     socket.on('orderUpdated', () => {
       console.log("🔥 Live TV Screen Auto-Refreshing Now!");
-      fetchLiveOrders(true); // 🚀 Silent refresh without showing full-screen loader
+      fetchLiveOrders(true); 
     });
-
     return () => socket.disconnect();
   }, []);
 
-  // 📜 Auto-Scroll Engine for TV Screen
+  // 📜 SMART AUTO-SCROLL ENGINE (Perfect Loop Up & Down when full)
   useEffect(() => {
     const autoScroll = (ref) => {
       if (ref.current) {
         const { scrollTop, scrollHeight, clientHeight } = ref.current;
-        if (scrollTop + clientHeight >= scrollHeight - 5) {
-          ref.current.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-          ref.current.scrollBy({ top: 120, behavior: 'smooth' });
+        
+        // Agar items container height se bade hain tabhi scroll karega
+        if (scrollHeight > clientHeight) {
+          // Check agar scroll ekdum bottom tak pahuch gaya hai (with 8px buffer)
+          if (scrollTop + clientHeight >= scrollHeight - 8) {
+            // Wapas top par leak proof smooth scroll up karega
+            ref.current.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            // Dheere dheere 80px niche slide karega
+            ref.current.scrollBy({ top: 80, behavior: 'smooth' });
+          }
         }
       }
     };
@@ -57,11 +60,11 @@ export default function DisplayScreen() {
       autoScroll(pendRef);
       autoScroll(prepRef); 
       autoScroll(collRef); 
-    }, 3000);
+    }, 3500); // Har 3.5 seconds mein calculation check karke scroll karega
+    
     return () => clearInterval(scrollTimer);
-  }, []);
+  }, [orders]); // State change track clear rakhega
 
-  // 🛡️ FILTERING LOGIC WITH DUPLICATE BLOCKERS
   const pendingOrders = orders
     .filter(o => o.status === 'Accepted')
     .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
