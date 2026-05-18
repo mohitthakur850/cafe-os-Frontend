@@ -8,34 +8,33 @@ export default function DisplayScreen() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // 3 Refs for 3 Columns Auto-Scrolling
   const pendRef = useRef(null);
   const prepRef = useRef(null);
   const collRef = useRef(null);
 
-  // 🔄 Live Fetching Engine with WebSockets
-  useEffect(() => {
-    const fetchLiveOrders = (isSilent = false) => {
-      if (!isSilent) setIsLoading(true);
-      fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
-        .then(res => res.json())
-        .then(data => {
-          setOrders(data);
-          setIsLoading(false);
-        })
-        .catch(err => {
-          console.error("Live Update Error:", err);
-          setIsLoading(false);
-        });
-    };
+  // 🔄 Fixed Live Fetching Engine with WebSockets
+  const fetchLiveOrders = (isSilent = false) => {
+    if (!isSilent) setIsLoading(true);
+    fetch(`${API_URL}/orders?t=${Date.now()}`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        setOrders(data);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Live Update Error:", err);
+        setIsLoading(false);
+      });
+  };
 
+  useEffect(() => {
     fetchLiveOrders();
 
-    // ⚡ WEBSOCKET CONNECTION
+    // ⚡ WEBSOCKET INSTANT CONNECTION
     const socket = io(API_URL, { transports: ['websocket'] });
     socket.on('orderUpdated', () => {
-      console.log("🔥 Live TV Update Received!");
-      fetchLiveOrders(true); 
+      console.log("🔥 Live TV Screen Auto-Refreshing Now!");
+      fetchLiveOrders(true); // 🚀 Silent refresh without showing full-screen loader
     });
 
     return () => socket.disconnect();
@@ -62,20 +61,20 @@ export default function DisplayScreen() {
     return () => clearInterval(scrollTimer);
   }, []);
 
-  // 🛡️ FILTERING LOGIC FOR 3 COLUMNS (Added Duplicate ID Remover)
+  // 🛡️ FILTERING LOGIC WITH DUPLICATE BLOCKERS
   const pendingOrders = orders
     .filter(o => o.status === 'Accepted')
-    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) // 🔥 Duplicate Fix
+    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
     .sort((a, b) => new Date(a.createdAt || a.created_at || Date.now()) - new Date(b.createdAt || b.created_at || Date.now()));
 
   const preparingOrders = orders
     .filter(o => o.status === 'Preparing')
-    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) // 🔥 Duplicate Fix
+    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
     .sort((a, b) => new Date(a.createdAt || a.created_at || Date.now()) - new Date(b.createdAt || b.created_at || Date.now()));
 
   const readyOrders = orders
     .filter(o => o.status === 'Ready')
-    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) // 🔥 Duplicate Fix
+    .filter((order, index, self) => index === self.findIndex(t => (t.id || t._id) === (order.id || order._id))) 
     .sort((a, b) => new Date(b.createdAt || b.created_at || Date.now()) - new Date(a.createdAt || a.created_at || Date.now())) 
     .slice(0, 30); 
 
@@ -96,7 +95,7 @@ export default function DisplayScreen() {
 
       <div className="tv-main-content">
         
-        {/* 1️⃣ PENDING (IN QUEUE) PANEL */}
+        {/* 1️⃣ PENDING PANEL */}
         <div className="panel panel-pending">
           <h1 className="main-heading heading-pend">In Queue</h1>
           <div className="grid-row list-header header-pend">
@@ -142,7 +141,7 @@ export default function DisplayScreen() {
           </div>
         </div>
 
-        {/* 3️⃣ READY TO COLLECT PANEL */}
+        {/* 3️⃣ READY PANEL */}
         <div className="panel panel-collect">
           <h1 className="main-heading heading-coll">Please Collect</h1>
           <div className="grid-row list-header header-coll">
@@ -166,7 +165,6 @@ export default function DisplayScreen() {
         </div>
       </div>
       
-      {/* FOOTER MARQUEE */}
       <div className="footer-scroller">
         <div className="marquee">🍔 Welcome to RE:FILL! Freshly prepared, just for you. ☕</div>
       </div>
