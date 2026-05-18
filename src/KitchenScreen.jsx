@@ -10,7 +10,7 @@ import './KitchenScreen.css';
 
 // Backend URL
 const API_URL = 'https://cafe-os-backend.onrender.com';
-const BUILD_MARKER = 'KDS-2026-05-18-v3';
+const BUILD_MARKER = 'KDS-2026-05-18-v4';
 
 const getOrderKey = (order) =>
   String(order._id || order.id);
@@ -317,6 +317,32 @@ export default function KitchenPage() {
     newOrders.length +
     prepOrders.length;
 
+  const handleColumnWheel = (event) => {
+
+    const grid =
+      event.currentTarget.querySelector(
+        '.kitchen-grid'
+      );
+
+    if (!grid) {
+      return;
+    }
+
+    const maxScroll =
+      grid.scrollHeight -
+      grid.clientHeight;
+
+    if (maxScroll <= 0) {
+      return;
+    }
+
+    grid.scrollTop += event.deltaY;
+
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+  };
+
   return (
 
     <div className="kitchen-container">
@@ -384,7 +410,10 @@ export default function KitchenPage() {
 
         {/* NEW ORDERS */}
 
-        <section className="kitchen-column">
+        <section
+          className="kitchen-column"
+          onWheel={handleColumnWheel}
+        >
 
           <div className="column-header">
 
@@ -522,7 +551,10 @@ export default function KitchenPage() {
 
         {/* PREPARING */}
 
-        <section className="kitchen-column">
+        <section
+          className="kitchen-column"
+          onWheel={handleColumnWheel}
+        >
 
           <div className="column-header">
 
@@ -660,7 +692,10 @@ export default function KitchenPage() {
 
         {/* READY */}
 
-        <section className="kitchen-column">
+        <section
+          className="kitchen-column"
+          onWheel={handleColumnWheel}
+        >
 
           <div className="column-header">
 
